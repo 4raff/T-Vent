@@ -1,10 +1,19 @@
 {
   "name": "tvent-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev" : "node index.js"
+    "dev": "node app.js",
+    "db:setup": "node setup-database.js",
+    "db:migrate": "knex migrate:latest",
+    "db:migrate:rollback": "knex migrate:rollback",
+    "db:migrate:reset": "knex migrate:rollback --all && knex migrate:latest",
+    "db:seed": "knex seed:run",
+    "db:reset": "knex migrate:rollback --all && knex migrate:latest && knex seed:run",
+    "db:test": "node test-queries.js",
+    "db:make:migration": "knex migrate:make",
+    "db:make:seed": "knex seed:make"
   },
   "repository": {
     "type": "git",
@@ -18,6 +27,13 @@
   "homepage": "https://github.com/4raff/T-Vent#readme",
   "description": "",
   "dependencies": {
-    "express": "^5.1.0"
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "knex": "^3.1.0",
+    "mysql2": "^3.15.3"
+  },
+    "devDependencies": {
+    "nodemon": "^3.0.0"
   }
 }
