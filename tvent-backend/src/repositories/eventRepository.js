@@ -1,5 +1,6 @@
 const knex = require('../config/database');
 
+
 class EventRepository {
   async findById(id) {
     return knex('events').where({ id }).first();
@@ -19,6 +20,14 @@ class EventRepository {
 
   async list() {
     return knex('events').select('*');
+  }
+
+  // Search events by name or description
+  async search(query) {
+    return knex('events')
+      .where('nama', 'like', `%${query}%`)
+      .orWhere('deskripsi', 'like', `%${query}%`)
+      .select('*');
   }
 }
 

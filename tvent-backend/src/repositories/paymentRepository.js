@@ -1,5 +1,6 @@
 const knex = require('../config/database');
 
+
 class PaymentRepository {
   async findById(id) {
     return knex('payments').where({ id }).first();
@@ -19,6 +20,10 @@ class PaymentRepository {
 
   async list() {
     return knex('payments').select('*');
+  }
+
+  async findByTicketId(ticket_id) {
+    return knex('payments').where({ ticket_id }).first();
   }
 }
 

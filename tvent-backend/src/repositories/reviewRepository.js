@@ -1,5 +1,6 @@
 const knex = require('../config/database');
 
+
 class ReviewRepository {
   async findById(id) {
     return knex('reviews').where({ id }).first();
@@ -19,6 +20,10 @@ class ReviewRepository {
 
   async list() {
     return knex('reviews').select('*');
+  }
+
+  async findByUserAndEvent(user_id, event_id) {
+    return knex('reviews').where({ user_id, event_id }).first();
   }
 }
 
