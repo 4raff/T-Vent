@@ -21,7 +21,7 @@ export default function Navbar({
               <span className="text-white font-bold text-lg">✦</span>
             </div>
             <span className="font-bold text-lg bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              TelkomEvent
+              T-Event
             </span>
           </div>
 
