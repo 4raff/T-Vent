@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const UserController = require('../controllers/userController');
+const UserController = require('./controllers/userController');
 
 
 router.get('/', UserController.getAll);
@@ -13,6 +13,6 @@ router.delete('/:id', UserController.remove);
 router.get('/search/events', UserController.cariEvent);
 
 // Pilih event (select event for user)
-router.post('/select/event', UserController.pilihEvent);
+router.post('/select/events', UserController.pilihEvent);
 
-module.exports = router;
+module.exports = userRoutes;

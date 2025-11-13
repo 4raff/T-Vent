@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userRepository = require('./repositories/userRepository');
 
-class UserService {
+class userService {
   // Register new user
   async register(userData) {
     // Check if email already exists

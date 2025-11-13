@@ -4,7 +4,7 @@
 
 const userService = require('./services/userService');
 
-const UserController = {
+const userController = {
   // POST /api/users/register
   async register(req, res) {
     try {
