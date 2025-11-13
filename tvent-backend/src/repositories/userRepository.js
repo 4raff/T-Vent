@@ -1,30 +1,40 @@
-// Example repository for User entity using Knex.js
-const knex = require('../config/database');
+// ============================================
+// FILE: src/repositories/userRepository.js
+// ============================================
+
+const knex = require('../../knexfile');
+const db = require('knex')(knex[process.env.NODE_ENV || 'development']);
 
 class UserRepository {
   async findById(id) {
-    return knex('users').where({ id }).first();
+    return db('users').where({ id }).first();
   }
 
   async findByUsername(username) {
-    return knex('users').where({ username }).first();
+    return db('users').where({ username }).first();
+  }
+
+  async findByEmail(email) {
+    return db('users').where({ email }).first();
   }
 
   async create(user) {
-    return knex('users').insert(user).returning('*');
+    const [id] = await db('users').insert(user);
+    return this.findById(id);
   }
 
   async update(id, updates) {
-    return knex('users').where({ id }).update(updates).returning('*');
+    await db('users').where({ id }).update(updates);
+    return this.findById(id);
   }
 
   async delete(id) {
-    return knex('users').where({ id }).del();
+    return db('users').where({ id }).del();
   }
 
   async list() {
-    return knex('users').select('*');
+    return db('users').select('*');
   }
 }
 
-module.exports = new UserRepository();
+module.exports = new userRepository();

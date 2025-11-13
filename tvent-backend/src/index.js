@@ -1,6 +1,4 @@
-const express = require('express');
-const app = express();
-app.use(express.json());
+const app = require('../app');
 
 // Import routes
 const userRoutes = require('./routes/userRoutes');
@@ -31,4 +29,6 @@ app.use('/api/admin', adminRoutes);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
+  	console.log(` API Documentation: http://localhost:${PORT}/api`);
+  	console.log(` Health check: http://localhost:${PORT}/`);
 });
