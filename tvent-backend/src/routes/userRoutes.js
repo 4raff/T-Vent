@@ -1,18 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const UserController = require('./controllers/userController');
+const UserController = require('../controllers/userController');
 
+// Authentication routes
+router.post('/register', UserController.register);
+router.post('/login', UserController.login);
 
-router.get('/', UserController.getAll);
-router.get('/:id', UserController.getById);
-router.post('/', UserController.create);
-router.put('/:id', UserController.update);
-router.delete('/:id', UserController.remove);
+// Profile routes
+router.get('/profile', UserController.getProfile);
+router.put('/profile', UserController.updateProfile);
 
-// Cari event (search events)
-router.get('/search/events', UserController.cariEvent);
+// List all users (admin)
+router.get('/', UserController.list);
 
-// Pilih event (select event for user)
-router.post('/select/events', UserController.pilihEvent);
-
-module.exports = userRoutes;
+module.exports = router;

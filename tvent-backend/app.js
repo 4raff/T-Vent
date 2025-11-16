@@ -40,26 +40,6 @@ app.get('/api', (req, res) => {
 //   res.send('Hello World!')
 // })
 
-// 404 handler - Kalau endpoint tidak ditemukan
-app.use((req, res) => {
-  res.status(404).json({ 
-    success: false,
-    error: 'Endpoint not found',
-    message: `Cannot ${req.method} ${req.url}`,
-    availableEndpoints: '/api'
-  });
-});
-
-// Error handler - Kalau ada error di server
-app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    error: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
-
 // EXPORT app agar bisa dipakai di index.js
 module.exports = app;
 

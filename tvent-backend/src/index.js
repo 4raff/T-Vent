@@ -27,6 +27,26 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/mahasiswa', mahasiswaRoutes);
 app.use('/api/admin', adminRoutes);
 
+// 404 handler - Must be after all routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false,
+    error: 'Endpoint not found',
+    message: `Cannot ${req.method} ${req.url}`,
+    availableEndpoints: '/api'
+  });
+});
+
+// Error handler - Must be last
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);

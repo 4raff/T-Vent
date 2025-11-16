@@ -2,7 +2,7 @@
 // FILE: src/controllers/userController.js
 // ============================================
 
-const userService = require('./services/userService');
+const userService = require('../services/userService');
 
 const userController = {
   // POST /api/users/register
@@ -11,10 +11,10 @@ const userController = {
       const { username, email, password, no_handphone } = req.body;
 
       // Validasi input
-      if (!username || !email || !password) {
+      if (!username || !email || !password || !no_handphone) {
         return res.status(400).json({
           success: false,
-          error: 'Username, email, and password are required'
+          error: 'username, email, password, and no_handphone are required'
         });
       }
 
