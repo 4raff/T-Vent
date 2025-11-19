@@ -43,9 +43,22 @@ class AuthController {
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(401).json({ message: 'Password salah' });
 
+      const payload = { 
+            id: user.id, 
+            email: user.email, 
+            role: user.role || 'user' // Asumsi: Jika role kosong, default ke 'user'
+        };
+
       const token = jwt.sign({ id: user.id, email: user.email }, config.jwtSecret, { expiresIn: '1h' });
 
-      res.status(200).json({ message: 'Login berhasil', token: `${token}` });
+      const userResponse = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role || 'user'
+        };
+
+      res.status(200).json({ message: 'Login berhasil', token: `Bearer ${token}` });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Server Error', error: error.message });
