@@ -15,7 +15,7 @@ export default function EventCard({ event }) {
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-gray-200">
         <Image
-          src={event.image || "/placeholder.svg"}
+          src={event.image || "/images/placeholder.svg"}
           alt={event.title}
           width={400}
           height={300}
@@ -24,7 +24,7 @@ export default function EventCard({ event }) {
           }`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
+          
         {/* Category Badge */}
         <div
           className={`absolute top-4 left-4 px-3 py-1 rounded-full text-white text-xs font-bold bg-black/50 backdrop-blur-sm`}

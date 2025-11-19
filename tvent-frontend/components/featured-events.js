@@ -2,75 +2,7 @@
 
 import { useState } from "react";
 import EventCard from "./event-card";
-
-const events = [
-  {
-    id: 1,
-    title: "Watercolor Painting Masterclass",
-    category: "Workshop",
-    date: "December 15, 2024",
-    time: "10:00 AM - 2:00 PM",
-    location: "Main Hall",
-    image: "/watercolor-painting-workshop-art.jpg",
-    color: "from-accent-1 to-accent-2",
-    attendees: 350,
-  },
-  {
-    id: 2,
-    title: "Contemporary Art Exhibition",
-    category: "Exhibition",
-    date: "December 15-20, 2024",
-    time: "All Day",
-    location: "Gallery Space",
-    image: "/modern-contemporary-art-gallery-colorful.jpg",
-    color: "from-primary to-secondary",
-    attendees: 1200,
-  },
-  {
-    id: 3,
-    title: "Live Musical Performance",
-    category: "Performance",
-    date: "December 16, 2024",
-    time: "7:00 PM - 9:00 PM",
-    location: "Auditorium",
-    image: "/live-music-concert-performance-stage-lights.jpg",
-    color: "from-accent-3 to-accent-4",
-    attendees: 800,
-  },
-  {
-    id: 4,
-    title: "Digital Art & Animation",
-    category: "Workshop",
-    date: "December 17, 2024",
-    time: "2:00 PM - 5:00 PM",
-    location: "Studio Lab",
-    image: "/digital-art-animation-colorful-vibrant.jpg",
-    color: "from-secondary to-accent-1",
-    attendees: 280,
-  },
-  {
-    id: 5,
-    title: "Photography Symposium",
-    category: "Seminar",
-    date: "December 18, 2024",
-    time: "9:00 AM - 12:00 PM",
-    location: "Conference Hall",
-    image: "/photography-exhibition-colorful-subjects-artistic.jpg",
-    color: "from-accent-2 to-accent-3",
-    attendees: 450,
-  },
-  {
-    id: 6,
-    title: "Creative Networking Dinner",
-    category: "Social",
-    date: "December 19, 2024",
-    time: "6:00 PM - 9:00 PM",
-    location: "Grand Ballroom",
-    image: "/dinner-event-gathering-colorful-decoration-ambianc.jpg",
-    color: "from-accent-4 to-primary",
-    attendees: 200,
-  },
-];
+import events from "../data/events";
 
 export default function FeaturedEvents() {
   const [filter, setFilter] = useState("All");
@@ -132,9 +64,25 @@ export default function FeaturedEvents() {
 
         {/* Events grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event, idx) => (
-            <EventCard key={event.id} event={event} index={idx} />
-          ))}
+          {filteredEvents.map((event, idx) => {
+            // Normalisasi path gambar supaya menunjuk ke `/images/...` di folder public
+            let img = event.image || "";
+            if (img) {
+              if (img.startsWith("/")) {
+                // jika sudah mulai dengan '/', pastikan pathnya mengarah ke /images/
+                if (!img.startsWith("/images/")) img = `/images${img}`;
+              } else {
+                // jika hanya nama file atau tanpa leading slash
+                img = `/images/${img}`;
+              }
+            } else {
+              img = "/images/placeholder.svg";
+            }
+
+            return (
+              <EventCard key={event.id} event={{ ...event, image: img }} index={idx} />
+            );
+          })}
         </div>
       </div>
     </section>
