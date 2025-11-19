@@ -45,10 +45,7 @@ const validateCreateEvent = [
   body('poster')
     .optional()
     .isURL().withMessage('Format URL poster tidak valid'),
-  
-  body('created_by')
-    .notEmpty().withMessage('Created by tidak boleh kosong')
-    .isInt({ min: 1 }).withMessage('Created by harus berupa ID user yang valid')
+
 ];
 
 // Validasi untuk update event
@@ -118,7 +115,7 @@ const handleValidationErrors = (req, res, next) => {
     return res.status(400).json({
       message: 'Validasi gagal',
       errors: errors.array().map(err => ({
-        field: err.path,
+        field: err.param || err.path,
         message: err.msg
       }))
     });
