@@ -7,11 +7,18 @@ class EventRepository {
   }
 
   async create(event) {
-    return knex('events').insert(event).returning('*');
+    // Set tiket_tersedia sama dengan jumlah_tiket saat pertama kali dibuat
+    if (!event.tiket_tersedia && event.jumlah_tiket) {
+      event.tiket_tersedia = event.jumlah_tiket;
+    }
+    
+    const [id] = await knex('events').insert(event);
+    return this.findById(id);
   }
 
   async update(id, updates) {
-    return knex('events').where({ id }).update(updates).returning('*');
+    await knex('events').where({ id }).update(updates);
+    return this.findById(id);
   }
 
   async delete(id) {

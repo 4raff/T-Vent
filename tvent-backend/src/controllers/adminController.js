@@ -23,7 +23,22 @@ const AdminController = {
     try {
       const { eventId } = req.body;
       const event = await adminService.confirmEvent(eventId);
-      res.json(event);
+      res.json({ 
+        message: 'Event berhasil di-approve', 
+        data: event 
+      });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  },
+  async rejectEvent(req, res) {
+    try {
+      const { eventId } = req.body;
+      const event = await adminService.rejectEvent(eventId);
+      res.json({ 
+        message: 'Event berhasil di-reject', 
+        data: event 
+      });
     } catch (e) {
       res.status(400).json({ message: e.message });
     }
@@ -32,7 +47,10 @@ const AdminController = {
     try {
       const { eventId } = req.body;
       const event = await adminService.cancelEvent(eventId);
-      res.json(event);
+      res.json({ 
+        message: 'Event berhasil dibatalkan', 
+        data: event 
+      });
     } catch (e) {
       res.status(400).json({ message: e.message });
     }

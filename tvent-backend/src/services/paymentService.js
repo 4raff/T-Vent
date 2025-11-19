@@ -32,9 +32,16 @@ class PaymentService {
     return paymentRepository.update(id, { status: 'failed' });
   }
 
-  // terimaPembayaran: accept payment
+  // terimaPembayaran: accept payment and set tanggal_pembayaran
   async terimaPembayaran(id) {
-    return paymentRepository.update(id, { status: 'success' });
+    // Format datetime untuk MySQL: YYYY-MM-DD HH:mm:ss
+    const now = new Date();
+    const mysqlDatetime = now.toISOString().slice(0, 19).replace('T', ' ');
+    
+    return paymentRepository.update(id, { 
+      status: 'success',
+      tanggal_pembayaran: mysqlDatetime
+    });
   }
 
   // totalPembayaran: get total payment for user

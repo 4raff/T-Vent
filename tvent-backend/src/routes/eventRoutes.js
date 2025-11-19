@@ -1,15 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const EventController = require('../controllers/eventController');
+const checkAuth = require('../middlewares/checkAuth');
+const { 
+  validateCreateEvent, 
+  validateUpdateEvent, 
+  validateEventId,
+  handleValidationErrors 
+} = require('../middlewares/validators/eventValidator');
 
 
 router.get('/', EventController.getAll);
-router.get('/:id', EventController.getById);
-router.post('/', EventController.create);
-router.put('/:id', EventController.update);
-router.delete('/:id', EventController.remove);
+router.get('/:id', validateEventId, handleValidationErrors, EventController.getById);
+router.post('/',checkAuth, validateCreateEvent, handleValidationErrors, EventController.create);
+router.put('/:id',checkAuth, validateUpdateEvent, handleValidationErrors, EventController.update);
+router.delete('/:id',checkAuth, validateEventId, handleValidationErrors, EventController.remove);
 
-router.get('/:id/detail', EventController.tampilkanDetail);
-router.get('/:id/available-tiket', EventController.availableTiket);
+router.get('/:id/detail', validateEventId, handleValidationErrors, EventController.tampilkanDetail);
+router.get('/:id/available-tiket', validateEventId, handleValidationErrors, EventController.availableTiket);
 
 module.exports = router;

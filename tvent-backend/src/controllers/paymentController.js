@@ -12,12 +12,37 @@ const PaymentController = {
     res.json(payment);
   },
   async create(req, res) {
-    const payment = await paymentService.createPayment(req.body);
-    res.status(201).json(payment);
+    try {
+      const payment = await paymentService.createPayment(req.body);
+      res.status(201).json({ 
+        message: 'Pembayaran berhasil dibuat', 
+        data: payment 
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ 
+        message: 'Gagal membuat pembayaran', 
+        error: error.message 
+      });
+    }
   },
   async update(req, res) {
-    const payment = await paymentService.updatePayment(req.params.id, req.body);
-    res.json(payment);
+    try {
+      const payment = await paymentService.updatePayment(req.params.id, req.body);
+      if (!payment) {
+        return res.status(404).json({ message: 'Pembayaran tidak ditemukan' });
+      }
+      res.json({ 
+        message: 'Pembayaran berhasil diperbarui', 
+        data: payment 
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ 
+        message: 'Gagal memperbarui pembayaran', 
+        error: error.message 
+      });
+    }
   },
   async remove(req, res) {
     await paymentService.deletePayment(req.params.id);
@@ -46,7 +71,10 @@ const PaymentController = {
     try {
       const { id } = req.body;
       const payment = await paymentService.terimaPembayaran(id);
-      res.json(payment);
+      res.json({ 
+        message: 'Pembayaran berhasil diterima', 
+        data: payment 
+      });
     } catch (e) {
       res.status(400).json({ message: e.message });
     }
