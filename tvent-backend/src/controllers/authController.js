@@ -1,13 +1,11 @@
 // FILE: src/controllers/authController.js
 const userRepository = require('../repositories/userRepository');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt'); // Pakai 'bcrypt' bukan 'bcryptjs'
+const bcrypt = require('bcrypt'); 
 
-// Pastikan path ini benar! (Turun ke src, lalu masuk config)
 const config = require('../config/config'); 
 
 class AuthController {
-  // Gunakan Arrow Function agar aman
   register = async (req, res) => {
     try {
       const { username, email, password, no_handphone } = req.body;
@@ -16,7 +14,6 @@ class AuthController {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Generate profile picture dengan format username.jpg
       const profile_picture = `${username}.jpg`;
 
       const newUser = await userRepository.create({ 
@@ -48,7 +45,7 @@ class AuthController {
 
       const token = jwt.sign({ id: user.id, email: user.email }, config.jwtSecret, { expiresIn: '1h' });
 
-      res.status(200).json({ message: 'Login berhasil', token: `Bearer ${token}` });
+      res.status(200).json({ message: 'Login berhasil', token: `${token}` });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Server Error', error: error.message });

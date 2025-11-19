@@ -1,7 +1,6 @@
 const express = require('express')
 const cors = require('cors');
 const app = express()
-const port = 3000
 const authRoutes = require('./src/routes/authRoutes');
 // middleware
 app.use(cors());
@@ -37,10 +36,14 @@ app.get('/api', (req, res) => {
   });
 });
 
-// app.post('/', (req, res) => {
-//   res.send('Hello World!')
-// })
+const PORT = process.env.PORT || 3000;
 
+app.listen(PORT, () => {
+  console.log(`✅ Server berjalan di port ${PORT}`);
+  console.log(`🔗 Test URL: http://localhost:${PORT}`);
+});
+
+module.exports = app;
 // EXPORT app agar bisa dipakai di index.js
 module.exports = app;
 
