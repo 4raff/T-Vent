@@ -12,12 +12,37 @@ const ReviewController = {
     res.json(review);
   },
   async create(req, res) {
-    const review = await reviewService.createReview(req.body);
-    res.status(201).json(review);
+    try {
+      const review = await reviewService.createReview(req.body);
+      res.status(201).json({ 
+        message: 'Review berhasil dibuat', 
+        data: review 
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ 
+        message: 'Gagal membuat review', 
+        error: error.message 
+      });
+    }
   },
   async update(req, res) {
-    const review = await reviewService.updateReview(req.params.id, req.body);
-    res.json(review);
+    try {
+      const review = await reviewService.updateReview(req.params.id, req.body);
+      if (!review) {
+        return res.status(404).json({ message: 'Review tidak ditemukan' });
+      }
+      res.json({ 
+        message: 'Review berhasil diperbarui', 
+        data: review 
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ 
+        message: 'Gagal memperbarui review', 
+        error: error.message 
+      });
+    }
   },
   async remove(req, res) {
     await reviewService.deleteReview(req.params.id);

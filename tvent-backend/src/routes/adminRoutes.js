@@ -5,6 +5,7 @@ const AdminController = require('../controllers/adminController');
 router.post('/add-event', AdminController.addEvent);
 router.put('/edit-event', AdminController.editEvent);
 router.post('/confirm-event', AdminController.confirmEvent);
+router.post('/reject-event', AdminController.rejectEvent);
 router.post('/cancel-event', AdminController.cancelEvent);
 
 module.exports = router;

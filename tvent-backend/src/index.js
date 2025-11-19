@@ -2,6 +2,7 @@ const app = require('../app');
 
 
 // Import routes
+const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
@@ -16,6 +17,7 @@ const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
 // Register routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/tickets', ticketRoutes);

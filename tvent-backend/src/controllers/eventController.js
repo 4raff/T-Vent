@@ -12,12 +12,37 @@ const EventController = {
     res.json(event);
   },
   async create(req, res) {
-    const event = await eventService.createEvent(req.body);
-    res.status(201).json(event);
+    try {
+      const event = await eventService.createEvent(req.body);
+      res.status(201).json({ 
+        message: 'Event berhasil dibuat', 
+        data: event 
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ 
+        message: 'Gagal membuat event', 
+        error: error.message 
+      });
+    }
   },
   async update(req, res) {
-    const event = await eventService.updateEvent(req.params.id, req.body);
-    res.json(event);
+    try {
+      const event = await eventService.updateEvent(req.params.id, req.body);
+      if (!event) {
+        return res.status(404).json({ message: 'Event tidak ditemukan' });
+      }
+      res.json({ 
+        message: 'Event berhasil diperbarui', 
+        data: event 
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ 
+        message: 'Gagal memperbarui event', 
+        error: error.message 
+      });
+    }
   },
   async remove(req, res) {
     await eventService.deleteEvent(req.params.id);

@@ -7,11 +7,13 @@ class ReviewRepository {
   }
 
   async create(review) {
-    return knex('reviews').insert(review).returning('*');
+    const [id] = await knex('reviews').insert(review);
+    return this.findById(id);
   }
 
   async update(id, updates) {
-    return knex('reviews').where({ id }).update(updates).returning('*');
+    await knex('reviews').where({ id }).update(updates);
+    return this.findById(id);
   }
 
   async delete(id) {

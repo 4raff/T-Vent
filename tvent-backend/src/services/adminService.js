@@ -21,6 +21,11 @@ class AdminService {
   async cancelEvent(eventId) {
     return eventRepository.update(eventId, { status: 'cancelled' });
   }
+
+  // rejectEvent: admin rejects event
+  async rejectEvent(eventId) {
+    return eventRepository.update(eventId, { status: 'rejected' });
+  }
 }
 
 module.exports = new AdminService();

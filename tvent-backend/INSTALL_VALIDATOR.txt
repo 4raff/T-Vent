@@ -1,0 +1,6 @@
+// Jalankan command ini di terminal:
+// cd tvent-backend
+// npm install express-validator
+
+// Setelah install, server sudah bisa jalan dengan validasi lengkap!
+// Baca VALIDATION_GUIDE.md untuk dokumentasi lengkap

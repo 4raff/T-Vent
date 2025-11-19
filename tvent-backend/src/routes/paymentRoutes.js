@@ -1,13 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const PaymentController = require('../controllers/paymentController');
+const { 
+  validateCreatePayment, 
+  validateUpdatePaymentStatus, 
+  validatePaymentId,
+  handleValidationErrors 
+} = require('../middlewares/validators/paymentValidator');
 
 
 router.get('/', PaymentController.getAll);
-router.get('/:id', PaymentController.getById);
-router.post('/', PaymentController.create);
-router.put('/:id', PaymentController.update);
-router.delete('/:id', PaymentController.remove);
+router.get('/:id', validatePaymentId, handleValidationErrors, PaymentController.getById);
+router.post('/', validateCreatePayment, handleValidationErrors, PaymentController.create);
+router.put('/:id', validateUpdatePaymentStatus, handleValidationErrors, PaymentController.update);
+router.delete('/:id', validatePaymentId, handleValidationErrors, PaymentController.remove);
 
 router.post('/proses', PaymentController.prosesPembayaran);
 router.post('/tolak', PaymentController.tolakPembayaran);
