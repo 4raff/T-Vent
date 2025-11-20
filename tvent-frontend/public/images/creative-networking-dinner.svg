@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#fff7ed"/>
+  <rect x="80" y="80" width="1040" height="640" rx="16" fill="#fffaf0" stroke="#fde68a" />
+  <g fill="#92400e" font-family="Arial, Helvetica, sans-serif">
+    <text x="50%" y="45%" text-anchor="middle" font-size="48" font-weight="700">Creative Networking Dinner</text>
+    <text x="50%" y="55%" text-anchor="middle" font-size="20">Placeholder image — ganti dengan foto acara</text>
+  </g>
+</svg>
