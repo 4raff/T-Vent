@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function Navbar({
   onLoginClick,
+  onSignupClick,
   onCreateEventClick,
   isLoggedIn,
   user,
@@ -63,12 +64,20 @@ export default function Navbar({
                 </button>
               </div>
             ) : (
-              <button
-                onClick={onLoginClick}
-                className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition"
-              >
-                Login
-              </button>
+              <>
+                <button
+                  onClick={onLoginClick}
+                  className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={onSignupClick}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-muted hover:bg-muted/80 transition"
+                >
+                  Sign Up
+                </button>
+              </>
             )}
             <button
               onClick={onCreateEventClick}
@@ -141,6 +150,12 @@ export default function Navbar({
               className="w-full px-4 py-2 text-left text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition"
             >
               Login
+            </button>
+            <button
+              onClick={onSignupClick}
+              className="w-full px-4 py-2 text-left text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition"
+            >
+              Sign Up
             </button>
             <button
               onClick={onCreateEventClick}
