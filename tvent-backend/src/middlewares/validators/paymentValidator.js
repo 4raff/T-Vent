@@ -36,6 +36,13 @@ const validatePaymentId = [
     .isInt({ min: 1 }).withMessage('ID pembayaran tidak valid')
 ];
 
+// Validasi untuk payment approval (terima/tolak/proses)
+const validatePaymentApproval = [
+  body('id')
+    .notEmpty().withMessage('ID pembayaran tidak boleh kosong')
+    .isInt({ min: 1 }).withMessage('ID pembayaran tidak valid')
+];
+
 // Middleware untuk handle hasil validasi
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -55,5 +62,6 @@ module.exports = {
   validateCreatePayment,
   validateUpdatePaymentStatus,
   validatePaymentId,
+  validatePaymentApproval,
   handleValidationErrors
 };
