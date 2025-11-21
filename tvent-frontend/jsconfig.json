@@ -2,10 +2,12 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/components/*": ["./components/*"], 
+      "@data-layer/*": ["./src/data-layer/*"],
+      "@/*": ["./src/*"] 
     },
     "jsx": "preserve"
   },
-  "include": ["next.config.js", "**/*.js", "**/*.jsx"],
+  "include": ["next.config.js", "**/*.js", "**/*.jsx", "src/**/*.js", "src/**/*.jsx"],
   "exclude": ["node_modules"]
 }

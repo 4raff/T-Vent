@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { authService } from '@/data-layer/authService';
 
 export default function LoginModal({
   onClose,
   onLogin,
   isSignupMode = false,
-  loading = false,
 }) {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -15,31 +15,68 @@ export default function LoginModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSignup, setIsSignup] = useState(isSignupMode);
 
-  const handleSubmit = (e) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage(null);
+    setIsLoading(true);
 
-    if (isSignup) {
-      // Validasi signup
-      if (password !== confirmPassword) {
-        alert("Passwords don't match!");
-        return;
+    console.log("DEBUG DATA SENT:", { 
+        password: password, 
+        confirmPassword: confirmPassword, 
+        isMatch: password === confirmPassword 
+    });
+    
+    try {
+      let response = null;
+
+      if (isSignup) {
+        if (password !== confirmPassword) {
+          setErrorMessage("Konfirmasi password tidak cocok!");
+          setIsLoading(false);
+          return;
+        }
+
+        response = await authService.register({
+          email,
+          username,
+          password,
+          no_handphone: number,
+        });
+
+        alert("Registrasi berhasil! Silakan login.");
+        setIsSignup(false);
+        setErrorMessage(null);
+
+      } else {
+        const credentials = { email, password };
+        response = await authService.login(credentials);
+        
+        onLogin(response.token, response.user);
+        
+        onClose(); 
       }
+    } catch (error) {
+      
+      // 🛑 DEBUGGING: Cetak seluruh objek error untuk melihat property apa yang ada
+      console.error("Auth Error: Object Penuh:", error); 
+      console.error("Auth Error: Data Backend:", error.response?.data);
+      
+      // Ambil pesan error dari respons backend atau gunakan pesan default
+      const backendMessage = error.response?.data?.message || error.message;
 
-      if (password.length < 6) {
-        alert("Password must be at least 6 characters!");
-        return;
-      }
-
-      onLogin(email, username, number, password);
-    } else {
-      // Login
-      onLogin(email, null, null, password);
+      setErrorMessage(backendMessage || "Terjadi kesalahan saat menghubungi server.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
+        
         {/* Header */}
         <div className="relative p-6 border-b border-accent/20">
           <div className="flex items-center justify-between">
@@ -48,7 +85,7 @@ export default function LoginModal({
             </h2>
             <button
               onClick={onClose}
-              disabled={loading} // ✅ Disable saat loading
+              disabled={isLoading}
               className="p-2 hover:bg-muted rounded-lg transition disabled:opacity-50"
             >
               ✕
@@ -63,6 +100,13 @@ export default function LoginModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          
+          {errorMessage && (
+            <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg">
+              {errorMessage}
+            </div>
+          )}
+          
           {isSignup && (
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
@@ -74,7 +118,7 @@ export default function LoginModal({
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="user"
                 required
-                disabled={loading} // ✅ Disable saat loading
+                disabled={isLoading}
                 className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
               />
             </div>
@@ -90,7 +134,7 @@ export default function LoginModal({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              disabled={loading}
+              disabled={isLoading}
               className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
             />
           </div>
@@ -106,7 +150,7 @@ export default function LoginModal({
                 onChange={(e) => setNumber(e.target.value)}
                 placeholder="08123456789"
                 required
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
               />
             </div>
@@ -122,7 +166,7 @@ export default function LoginModal({
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              disabled={loading}
+              disabled={isLoading}
               className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
             />
           </div>
@@ -138,7 +182,7 @@ export default function LoginModal({
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
               />
             </div>
@@ -146,10 +190,10 @@ export default function LoginModal({
 
           <button
             type="submit"
-            disabled={loading} // ✅ Disable saat loading
+            disabled={isLoading}
             className="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                   <circle
@@ -183,7 +227,7 @@ export default function LoginModal({
             {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               onClick={() => setIsSignup(!isSignup)}
-              disabled={loading}
+              disabled={isLoading}
               className="text-primary font-semibold hover:underline disabled:opacity-50"
             >
               {isSignup ? "Login" : "Sign up"}
