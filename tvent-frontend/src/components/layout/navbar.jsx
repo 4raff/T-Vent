@@ -159,7 +159,7 @@ export default function Navbar({
             </button>
             <button
               onClick={onCreateEventClick}
-              className="w-full px-4 py-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-lg font-medium"
+              className="w-full px-4 py-2 text-left bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium hover:shadow-lg transition"
             >
               + Create Event
             </button>

@@ -20,6 +20,7 @@ export default function CreateEventModal({ onClose, isLoggedIn }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Event created:", formData);
+    // TODO: Call eventService.createEvent(formData)
     onClose();
   };
 

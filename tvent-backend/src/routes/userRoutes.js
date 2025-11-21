@@ -11,10 +11,6 @@ const {
   validateChangePassword 
 } = require('../middlewares/validators/userValidator');
 
-// Authentication routes
-router.post('/register', validateRegister, handleValidationErrors, UserController.register);
-router.post('/login', validateLogin, handleValidationErrors, UserController.login);
-
 // Profile routes
 router.get('/profile', UserController.getProfile);
 router.put('/profile', validateUpdateProfile, handleValidationErrors, UserController.updateProfile);

@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react"; 
-import { authService } from "@/data-layer/authService"; 
-import api from '@/data-layer/axios';
+import { authService } from "@/utils/services/authService"; 
+import { eventService } from "@/utils/services/eventService";
+import { INFO_MESSAGES, ERROR_MESSAGES } from "@/constants/messages";
 
-import Navbar from "@/components/navbar";
-import HeroUnique from "@/components/hero-unique";
-import SearchSection from "@/components/search-section";
-import EventGrid from "@/components/event-grid";
-import CategoriesBar from "@/components/categories-bar";
-import Footer from "@/components/footer";
-import LoginModal from "@/components/login-modal";
-import CreateEventModal from "@/components/create-event-modal";
+import Navbar from "@/components/layout/navbar";
+import HeroUnique from "@/components/sections/hero-unique";
+import SearchSection from "@/components/sections/search-section";
+import EventGrid from "@/components/events/event-grid";
+import CategoriesBar from "@/components/sections/categories-bar";
+import Footer from "@/components/layout/footer";
+import LoginModal from "@/components/modals/login-modal";
+import CreateEventModal from "@/components/modals/create-event-modal";
 
 export default function Home() {
     const [showLogin, setShowLogin] = useState(false);
@@ -26,13 +27,13 @@ export default function Home() {
 
     const fetchEvents = async () => {
         try {
-            const response = await api.get('/events'); 
-            const dataArray = response.data.data || response.data;
+            const response = await eventService.getEvents(); 
+            const dataArray = response.data || response;
             setEvents(Array.isArray(dataArray) ? dataArray : []); 
             setLoading(false);
         } catch (err) {
             console.error("Failed to fetch events:", err);
-            setError("Gagal memuat daftar event dari server.");
+            setError(ERROR_MESSAGES.FETCH_EVENTS_FAILED);
             setLoading(false);
         }
     };
@@ -95,11 +96,11 @@ export default function Home() {
             <SearchSection />
             <CategoriesBar />
             
-            {loading && <p className="text-center text-xl p-8">Memuat daftar Event...</p>}
+            {loading && <p className="text-center text-xl p-8">{INFO_MESSAGES.LOADING_EVENTS}</p>}
             {error && <p className="text-center text-red-500 text-xl p-8">Error: {error}</p>}
             
             {!loading && !error && events && events.length > 0 && <EventGrid events={events} />}
-            {!loading && !error && events && events.length === 0 && <p className="text-center text-xl p-8">Belum ada event yang tersedia.</p>}
+            {!loading && !error && events && events.length === 0 && <p className="text-center text-xl p-8">{INFO_MESSAGES.NO_EVENTS}</p>}
             
             <Footer />
 

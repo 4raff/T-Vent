@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import EventCard from "./event-card";
-import events from "../data/events";
+import EventCard from "@/components/events/event-card";
+import { events } from "@/data/events";
 
 export default function FeaturedEvents() {
   const [filter, setFilter] = useState("All");
@@ -32,7 +32,7 @@ export default function FeaturedEvents() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section header */}
-        <div className="text-center mb-16 slide-in-up">
+        <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent-1 bg-clip-text text-transparent mb-4">
             Featured Events
           </h2>
@@ -43,10 +43,7 @@ export default function FeaturedEvents() {
         </div>
 
         {/* Filter buttons */}
-        <div
-          className="flex flex-wrap justify-center gap-3 mb-12 slide-in-up"
-          style={{ animationDelay: "0.2s" }}
-        >
+        <div className="flex flex-wrap justify-center gap-3 mb-12">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -64,15 +61,13 @@ export default function FeaturedEvents() {
 
         {/* Events grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event, idx) => {
-            // Normalisasi path gambar supaya menunjuk ke `/images/...` di folder public
+          {filteredEvents.map((event) => {
+            // Normalize image path
             let img = event.image || "";
             if (img) {
               if (img.startsWith("/")) {
-                // jika sudah mulai dengan '/', pastikan pathnya mengarah ke /images/
                 if (!img.startsWith("/images/")) img = `/images${img}`;
               } else {
-                // jika hanya nama file atau tanpa leading slash
                 img = `/images/${img}`;
               }
             } else {
@@ -80,7 +75,7 @@ export default function FeaturedEvents() {
             }
 
             return (
-              <EventCard key={event.id} event={{ ...event, image: img }} index={idx} />
+              <EventCard key={event.id} event={{ ...event, image: img }} />
             );
           })}
         </div>

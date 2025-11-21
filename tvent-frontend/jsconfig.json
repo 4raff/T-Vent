@@ -2,8 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/components/*": ["./components/*"], 
-      "@data-layer/*": ["./src/data-layer/*"],
+      "@/components/*": ["src/components/*"], 
+      "@data-layer/*": ["src/utils/data-layer/*"],
       "@/*": ["./src/*"] 
     },
     "jsx": "preserve"
