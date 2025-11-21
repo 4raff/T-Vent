@@ -8,7 +8,8 @@ export const authService = {
   async register(userData) {
     try {
       const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, userData);
-      return response;
+      // Response format: { message: "...", data: { id, username, email, ... } }
+      return response.data || response;
     } catch (error) {
       // Throw error dengan data struktur yang benar
       throw error;
@@ -21,6 +22,7 @@ export const authService = {
   async login(credentials) {
     try {
       const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, credentials);
+      // Response format: { message: "...", token: "Bearer ..." }
 
       if (response.token) {
         localStorage.setItem('jwtToken', response.token);

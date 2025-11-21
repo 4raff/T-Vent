@@ -31,7 +31,10 @@ export default function LoginModal({
       if (isSignup) {
         // Register logic
         if (password !== confirmPassword) {
-          setErrorMessage("Konfirmasi password tidak cocok!");
+          setFieldErrors({
+            confirmPassword: ["Konfirmasi password tidak cocok"]
+          });
+          setErrorMessage("Validasi gagal");
           setIsLoading(false);
           return;
         }
@@ -40,20 +43,21 @@ export default function LoginModal({
           email,
           username,
           password,
+          confirmPassword,
           no_handphone: number,
         });
 
         setSuccessMessage("Akun berhasil dibuat! Silakan login.");
         
-        // Tunggu 1.5 detik biar user lihat success message, baru reset form
+        // Tunggu 1.5 detik biar user lihat success message, baru switch ke login
+        // Preserve email dan password untuk auto-fill di login form
         setTimeout(() => {
-          setEmail("");
           setUsername("");
           setNumber("");
-          setPassword("");
           setConfirmPassword("");
           setIsSignup(false);
           setSuccessMessage(null);
+          // email dan password tetap terisi untuk login
         }, 1500);
         
       } else {
@@ -74,6 +78,10 @@ export default function LoginModal({
     } catch (error) {
       console.error("Auth error:", error);
       console.error("Error data:", error.data);
+      console.error("Error data errors:", error.data?.errors);
+      if (error.data?.errors) {
+        console.error("Errors detail:", JSON.stringify(error.data.errors, null, 2));
+      }
       
       // Handle per-field errors - error.data adalah response object
       if (error.data?.errors && Array.isArray(error.data.errors)) {
@@ -254,8 +262,17 @@ export default function LoginModal({
                 placeholder="••••••••"
                 required={isSignup}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition bg-muted disabled:opacity-50 ${
+                  fieldErrors.confirmPassword
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-accent/20 focus:border-primary"
+                }`}
               />
+              {fieldErrors.confirmPassword && (
+                <div className="mt-1 text-sm text-red-600">
+                  {fieldErrors.confirmPassword.join(", ")}
+                </div>
+              )}
             </div>
           )}
 
