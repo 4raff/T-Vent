@@ -2,17 +2,38 @@
 
 import { useState } from "react";
 
-export default function LoginModal({ onClose, onLogin }) {
+export default function LoginModal({
+  onClose,
+  onLogin,
+  isSignupMode = false,
+  loading = false,
+}) {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [number, setNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignup, setIsSignup] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSignup, setIsSignup] = useState(isSignupMode);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (email) {
-      onLogin(email);
-      setEmail("");
-      setPassword("");
+
+    if (isSignup) {
+      // Validasi signup
+      if (password !== confirmPassword) {
+        alert("Passwords don't match!");
+        return;
+      }
+
+      if (password.length < 6) {
+        alert("Password must be at least 6 characters!");
+        return;
+      }
+
+      onLogin(email, username, number, password);
+    } else {
+      // Login
+      onLogin(email, null, null, password);
     }
   };
 
@@ -27,7 +48,8 @@ export default function LoginModal({ onClose, onLogin }) {
             </h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-muted rounded-lg transition"
+              disabled={loading} // ✅ Disable saat loading
+              className="p-2 hover:bg-muted rounded-lg transition disabled:opacity-50"
             >
               ✕
             </button>
@@ -41,6 +63,23 @@ export default function LoginModal({ onClose, onLogin }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {isSignup && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="user"
+                required
+                disabled={loading} // ✅ Disable saat loading
+                className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Email Address
@@ -51,9 +90,27 @@ export default function LoginModal({ onClose, onLogin }) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted"
+              disabled={loading}
+              className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
             />
           </div>
+
+          {isSignup && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                placeholder="08123456789"
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
@@ -65,7 +122,8 @@ export default function LoginModal({ onClose, onLogin }) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted"
+              disabled={loading}
+              className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
             />
           </div>
 
@@ -76,17 +134,46 @@ export default function LoginModal({ onClose, onLogin }) {
               </label>
               <input
                 type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted"
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 border-2 border-accent/20 rounded-lg focus:outline-none focus:border-primary transition bg-muted disabled:opacity-50"
               />
             </div>
           )}
 
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition"
+            disabled={loading} // ✅ Disable saat loading
+            className="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSignup ? "Create Account" : "Login"}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Loading...
+              </span>
+            ) : isSignup ? (
+              "Create Account"
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
 
@@ -96,7 +183,8 @@ export default function LoginModal({ onClose, onLogin }) {
             {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               onClick={() => setIsSignup(!isSignup)}
-              className="text-primary font-semibold hover:underline"
+              disabled={loading}
+              className="text-primary font-semibold hover:underline disabled:opacity-50"
             >
               {isSignup ? "Login" : "Sign up"}
             </button>
