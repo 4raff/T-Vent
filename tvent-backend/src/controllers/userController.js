@@ -9,7 +9,7 @@ const userController = {
   async getProfile(req, res) {
     try {
       // User data dari middleware authentication
-      const userId = req.user.id;
+      const userId = req.userData.id;
 
       const user = await userService.getProfile(userId);
 
@@ -29,7 +29,7 @@ const userController = {
   // PUT /api/users/profile (need authentication)
   async updateProfile(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.userData.id;
       const updates = req.body;
 
       // Tidak boleh update password lewat endpoint ini

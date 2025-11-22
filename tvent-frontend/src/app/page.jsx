@@ -28,6 +28,7 @@ export default function Home() {
     const fetchEvents = async () => {
         try {
             const response = await eventService.getEvents(); 
+            // Response bisa dalam format { data: [...] } atau langsung [...]
             const dataArray = response.data || response;
             setEvents(Array.isArray(dataArray) ? dataArray : []); 
             setLoading(false);

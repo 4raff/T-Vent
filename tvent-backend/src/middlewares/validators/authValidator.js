@@ -53,7 +53,7 @@ const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
-      message: 'Validasi gagal',
+      message: 'Masukkan identitas dengan benar',
       errors: errors.array().map(err => ({
         field: err.path,
         message: err.msg

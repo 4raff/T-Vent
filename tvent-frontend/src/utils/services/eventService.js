@@ -10,7 +10,7 @@ export const eventService = {
       const params = new URLSearchParams(filters);
       const endpoint = `${API_ENDPOINTS.EVENTS.LIST}${params ? `?${params}` : ''}`;
       const response = await apiClient.get(endpoint);
-      return response.data || response;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -22,7 +22,7 @@ export const eventService = {
   async getEvent(id) {
     try {
       const response = await apiClient.get(API_ENDPOINTS.EVENTS.GET(id));
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }

@@ -23,7 +23,8 @@ class ApiClient {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('jwtToken');
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        // Token already has 'Bearer ' prefix from backend, so don't add it again
+        headers['Authorization'] = token;
       }
     }
 

@@ -65,7 +65,11 @@ export default function LoginModal({
         const response = await authService.login({ email, password });
         
         if (response) {
-          const userData = response.user || response;
+          // response.data sudah berisi user profile dari /api/users/profile
+          const userData = response.data || response;
+          console.log("Login successful. User data:", userData);
+          
+          // Call onLogin callback - parent component akan handle state/redirect
           onLogin(response.token, userData);
           setSuccessMessage("Login berhasil!");
           
