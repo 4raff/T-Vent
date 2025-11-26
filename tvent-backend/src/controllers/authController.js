@@ -38,10 +38,10 @@ class AuthController {
     try {
       const { email, password } = req.body;
       const user = await userRepository.findByEmail(email);
-      if (!user) return res.status(401).json({ message: 'Email salah' });
+      if (!user) return res.status(401).json({ message: 'Email atau password salah' });
 
       const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) return res.status(401).json({ message: 'Password salah' });
+      if (!isMatch) return res.status(401).json({ message: 'Email atau password salah' });
 
       const payload = { 
             id: user.id, 

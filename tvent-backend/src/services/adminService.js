@@ -12,44 +12,28 @@ class AdminService {
     this.ticketRepository = ticketRepository;
   }
 
-  // Event Management
-  async addEvent(adminId, eventData) {
-    try {
-      const event = await this.eventRepository.create({
-        ...eventData,
-        penyelenggara: adminId,
-        status: 'pending',
-        is_published: false,
-        created_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal membuat event: ${error.message}`);
-    }
-  }
-
-  async editEvent(eventId, updates) {
-    try {
-      const event = await this.eventRepository.update(eventId, {
-        ...updates,
-        updated_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal edit event: ${error.message}`);
-    }
-  }
-
-  async confirmEvent(eventId) {
+  // Event Approval Management (Admin Only)
+  async approveEvent(eventId) {
     try {
       const event = await this.eventRepository.update(eventId, {
         status: 'approved',
-        is_published: true,
         updated_at: new Date(),
       });
       return event;
     } catch (error) {
-      throw new Error(`Gagal confirm event: ${error.message}`);
+      throw new Error(`Gagal approve event: ${error.message}`);
+    }
+  }
+
+  async rejectEvent(eventId) {
+    try {
+      const event = await this.eventRepository.update(eventId, {
+        status: 'rejected',
+        updated_at: new Date(),
+      });
+      return event;
+    } catch (error) {
+      throw new Error(`Gagal reject event: ${error.message}`);
     }
   }
 
@@ -57,12 +41,23 @@ class AdminService {
     try {
       const event = await this.eventRepository.update(eventId, {
         status: 'cancelled',
-        is_published: false,
         updated_at: new Date(),
       });
       return event;
     } catch (error) {
       throw new Error(`Gagal cancel event: ${error.message}`);
+    }
+  }
+
+  async completeEvent(eventId) {
+    try {
+      const event = await this.eventRepository.update(eventId, {
+        status: 'completed',
+        updated_at: new Date(),
+      });
+      return event;
+    } catch (error) {
+      throw new Error(`Gagal complete event: ${error.message}`);
     }
   }
 
@@ -184,33 +179,6 @@ class AdminService {
     }
   }
 
-  async approveEvent(eventId) {
-    try {
-      const event = await this.eventRepository.update(eventId, {
-        is_published: true,
-        status: 'approved',
-        updated_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal approve event: ${error.message}`);
-    }
-  }
-
-  async rejectEvent(eventId, alasan) {
-    try {
-      const event = await this.eventRepository.update(eventId, {
-        is_published: false,
-        status: 'rejected',
-        rejection_reason: alasan,
-        updated_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal reject event: ${error.message}`);
-    }
-  }
-
   // Payment Reports
   async getPaymentReport(page = 1, limit = 20, status = 'completed') {
     try {
@@ -301,11 +269,6 @@ class AdminService {
     } catch (error) {
       throw new Error(`Gagal export data: ${error.message}`);
     }
-  }
-
-  // rejectEvent: admin rejects event
-  async rejectEvent(eventId) {
-    return eventRepository.update(eventId, { status: 'rejected' });
   }
 }
 

@@ -1,130 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import Navbar from "@/components/navbar";
-import HeroUnique from "@/components/hero-unique";
-import SearchSection from "@/components/search-section";
-import EventGrid from "@/components/event-grid";
-import CategoriesBar from "../../components/categories-bar";
-import Footer from "@/components/footer";
-import LoginModal from "@/components/login-modal";
-import CreateEventModal from "@/components/create-event-modal";
-import { authService } from "@/src/app/services/authService"; // ✅ Import service
+import { useState, useEffect } from "react"; 
+import { authService } from "@/utils/services/authService"; 
+import { eventService } from "@/utils/services/eventService";
+import { INFO_MESSAGES, ERROR_MESSAGES } from "@/constants/messages";
+
+import Navbar from "@/components/layout/navbar";
+import HeroUnique from "@/components/sections/hero-unique";
+import SearchSection from "@/components/sections/search-section";
+import EventGrid from "@/components/events/event-grid";
+import CategoriesBar from "@/components/sections/categories-bar";
+import Footer from "@/components/layout/footer";
+import LoginModal from "@/components/modals/login-modal";
+import CreateEventModal from "@/components/modals/create-event-modal";
 
 export default function Home() {
-  const [showLogin, setShowLogin] = useState(false);
-  const [isSignupMode, setIsSignupMode] = useState(false);
-  const [showCreateEvent, setShowCreateEvent] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false); // ✅ Loading state
+    const [showLogin, setShowLogin] = useState(false);
+    const [isSignupMode, setIsSignupMode] = useState(false);
+    const [showCreateEvent, setShowCreateEvent] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [user, setUser] = useState(null);
+    
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  const handleLogin = async (formData) => {
-    // Bongkar isi formData agar fleksibel
-    const { email, username, phone, number, password } = formData;
-
-    // Handle variasi nama variabel (jika LoginModal mengirim 'number' atau 'phone')
-    const phoneNumber = phone || number;
-
-    setLoading(true);
-
-    try {
-      let response;
-
-      if (isSignupMode) {
-        // ✅ Call Register API
-        // Validasi sederhana sebelum kirim
-        if (!username || !phoneNumber || !password) {
-          throw new Error("Mohon lengkapi semua data registrasi.");
+    const fetchEvents = async () => {
+        try {
+            const response = await eventService.getEvents(); 
+            // Response bisa dalam format { data: [...] } atau langsung [...]
+            const dataArray = response.data || response;
+            setEvents(Array.isArray(dataArray) ? dataArray : []); 
+            setLoading(false);
+        } catch (err) {
+            console.error("Failed to fetch events:", err);
+            setError(ERROR_MESSAGES.FETCH_EVENTS_FAILED);
+            setLoading(false);
         }
+    };
 
-        response = await authService.register({
-          email,
-          username,
-          no_handphone: phoneNumber, // Pastikan key sesuai dengan backend (biasanya 'phone')
-          password,
-        });
+    const handleAuthSuccess = (token, userData) => {
+        localStorage.setItem('jwtToken', token);
+        localStorage.setItem('user', JSON.stringify(userData));
 
-        alert("Account created successfully! Please login.");
-        setIsSignupMode(false);
-      } else {
-        // ✅ Call Login API
-        response = await authService.login({
-          email,
-          password,
-        });
-
-        // Set user data logic...
-        setUser({
-          email: response.user?.email || email,
-          name:
-            response.user?.username ||
-            response.user?.name ||
-            email.split("@")[0],
-          phone: response.user?.phone,
-        });
+        setUser(userData);
         setIsLoggedIn(true);
         setShowLogin(false);
+    };
 
-        alert("Login successful!");
-      }
-    } catch (error) {
-      console.error("Auth Error:", error);
-      // Tampilkan pesan error spesifik dari backend jika ada
-      alert(error.message || "Terjadi kesalahan. Coba lagi.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleLogout = () => {
+        authService.logout(); 
+        setUser(null);
+        setIsLoggedIn(false);
+        alert("Logged out successfully!");
+    };
 
-  const handleLoginClick = () => {
-    setIsSignupMode(false);
-    setShowLogin(true);
-  };
+    useEffect(() => {
+        const storedToken = localStorage.getItem('jwtToken');
+        const storedUser = localStorage.getItem('user');
 
-  const handleSignupClick = () => {
-    setIsSignupMode(true);
-    setShowLogin(true);
-  };
+        if (storedToken && storedUser && storedUser !== 'null' && storedUser !== 'undefined') {
+            try {
+                setIsLoggedIn(true);
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                // Clear storage if data is corrupted
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('user');
+            }
+        }
+        
+        fetchEvents();
+    }, []); 
 
-  const handleLogout = () => {
-    authService.logout(); // ✅ Clear token
-    setUser(null);
-    setIsLoggedIn(false);
-    alert("Logged out successfully!");
-  };
+    const handleLoginClick = () => {
+        setIsSignupMode(false);
+        setShowLogin(true);
+    };
 
-  return (
-    <main className="min-h-screen bg-background">
-      <Navbar
-        onLoginClick={handleLoginClick}
-        onSignupClick={handleSignupClick}
-        onCreateEventClick={() => setShowCreateEvent(true)}
-        isLoggedIn={isLoggedIn}
-        user={user}
-        onLogout={handleLogout}
-      />
-      <HeroUnique />
-      <SearchSection />
-      <CategoriesBar />
-      <EventGrid />
-      <Footer />
+    const handleSignupClick = () => {
+        setIsSignupMode(true);
+        setShowLogin(true);
+    };
 
-      {showLogin && (
-        <LoginModal
-          onClose={() => setShowLogin(false)}
-          onLogin={handleLogin}
-          isSignupMode={isSignupMode}
-          loading={loading} // ✅ Pass loading state
-        />
-      )}
+    return (
+        <main className="min-h-screen bg-background">
+            <Navbar
+                onLoginClick={handleLoginClick}
+                onSignupClick={handleSignupClick}
+                onCreateEventClick={() => setShowCreateEvent(true)}
+                isLoggedIn={isLoggedIn}
+                user={user}
+                onLogout={handleLogout}
+            />
+            <HeroUnique />
+            <SearchSection />
+            <CategoriesBar />
+            
+            {loading && <p className="text-center text-xl p-8">{INFO_MESSAGES.LOADING_EVENTS}</p>}
+            {error && <p className="text-center text-red-500 text-xl p-8">Error: {error}</p>}
+            
+            {!loading && !error && events && events.length > 0 && <EventGrid events={events} />}
+            {!loading && !error && events && events.length === 0 && <p className="text-center text-xl p-8">{INFO_MESSAGES.NO_EVENTS}</p>}
+            
+            <Footer />
 
-      {showCreateEvent && (
-        <CreateEventModal
-          onClose={() => setShowCreateEvent(false)}
-          isLoggedIn={isLoggedIn}
-        />
-      )}
-    </main>
-  );
+            {showLogin && (
+                <LoginModal
+                    onClose={() => setShowLogin(false)}
+                    onLogin={handleAuthSuccess} 
+                    isSignupMode={isSignupMode}
+                />
+            )}
+
+            {showCreateEvent && (
+                <CreateEventModal
+                    onClose={() => setShowCreateEvent(false)}
+                    isLoggedIn={isLoggedIn}
+                    user={user}
+                />
+            )}
+        </main>
+    );
 }

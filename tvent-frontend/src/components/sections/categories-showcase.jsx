@@ -59,9 +59,9 @@ export default function CategoriesShowcase() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((cat, idx) => (
+          {categories.map((cat) => (
             <button
-              key={idx}
+              key={cat.name}
               className={`group p-8 rounded-2xl border-2 ${cat.borderColor} bg-gradient-to-br ${cat.color} hover:scale-105 hover:shadow-xl transition-all duration-300 overflow-hidden relative`}
             >
               {/* Animated background */}

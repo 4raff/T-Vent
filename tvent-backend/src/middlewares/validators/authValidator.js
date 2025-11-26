@@ -16,11 +16,13 @@ const validateRegister = [
     .isLength({ max: 100 }).withMessage('Email maksimal 100 karakter'),
   
   body('password')
+    .trim()
     .notEmpty().withMessage('Password tidak boleh kosong')
     .isLength({ min: 6 }).withMessage('Password minimal 6 karakter')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('Password harus mengandung huruf besar, huruf kecil, dan angka'),
   
   body('confirmPassword')
+    .trim()
     .custom((value, { req }) => {
       if (value !== req.body.password) {
         throw new Error('Konfirmasi password tidak cocok');
@@ -51,7 +53,7 @@ const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
-      message: 'Validasi gagal',
+      message: 'Masukkan identitas dengan benar',
       errors: errors.array().map(err => ({
         field: err.path,
         message: err.msg

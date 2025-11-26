@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const UserController = require('../controllers/userController');
+const checkAuth = require('../middlewares/checkAuth');
 const { 
   validateRegister, 
   validateLogin, 
@@ -11,13 +12,9 @@ const {
   validateChangePassword 
 } = require('../middlewares/validators/userValidator');
 
-// Authentication routes
-router.post('/register', validateRegister, handleValidationErrors, UserController.register);
-router.post('/login', validateLogin, handleValidationErrors, UserController.login);
-
-// Profile routes
-router.get('/profile', UserController.getProfile);
-router.put('/profile', validateUpdateProfile, handleValidationErrors, UserController.updateProfile);
+// Profile routes (require authentication)
+router.get('/profile', checkAuth, UserController.getProfile);
+router.put('/profile', checkAuth, validateUpdateProfile, handleValidationErrors, UserController.updateProfile);
 
 // List all users (admin)
 router.get('/', UserController.list);
