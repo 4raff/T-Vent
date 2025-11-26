@@ -15,8 +15,20 @@ export default function LoginModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSignup, setIsSignup] = useState(isSignupMode);
 
+  const [phone, setPhone] = useState("");
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const formData = {
+      email,
+      password,
+      // Kirim username & phone hanya jika mode signup, jika tidak null/string kosong
+      username: isSignupMode ? username : undefined,
+      phone: isSignupMode ? phone : undefined,
+    };
+
+    onLogin(formData);
 
     if (isSignup) {
       // Validasi signup
@@ -102,8 +114,8 @@ export default function LoginModal({
               </label>
               <input
                 type="tel"
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 placeholder="08123456789"
                 required
                 disabled={loading}

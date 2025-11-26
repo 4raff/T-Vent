@@ -19,7 +19,13 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false); // ✅ Loading state
 
-  const handleLogin = async (email, username, number, password) => {
+  const handleLogin = async (formData) => {
+    // Bongkar isi formData agar fleksibel
+    const { email, username, phone, number, password } = formData;
+
+    // Handle variasi nama variabel (jika LoginModal mengirim 'number' atau 'phone')
+    const phoneNumber = phone || number;
+
     setLoading(true);
 
     try {
@@ -27,15 +33,20 @@ export default function Home() {
 
       if (isSignupMode) {
         // ✅ Call Register API
+        // Validasi sederhana sebelum kirim
+        if (!username || !phoneNumber || !password) {
+          throw new Error("Mohon lengkapi semua data registrasi.");
+        }
+
         response = await authService.register({
           email,
           username,
-          phone: number,
+          no_handphone: phoneNumber, // Pastikan key sesuai dengan backend (biasanya 'phone')
           password,
         });
 
         alert("Account created successfully! Please login.");
-        setIsSignupMode(false); // Switch ke mode login
+        setIsSignupMode(false);
       } else {
         // ✅ Call Login API
         response = await authService.login({
@@ -43,7 +54,7 @@ export default function Home() {
           password,
         });
 
-        // Set user data
+        // Set user data logic...
         setUser({
           email: response.user?.email || email,
           name:
@@ -59,7 +70,8 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Auth Error:", error);
-      alert(error.message || "An error occurred. Please try again.");
+      // Tampilkan pesan error spesifik dari backend jika ada
+      alert(error.message || "Terjadi kesalahan. Coba lagi.");
     } finally {
       setLoading(false);
     }
