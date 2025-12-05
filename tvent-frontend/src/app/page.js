@@ -16,8 +16,13 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
 
-  const handleLogin = (email) => {
-    setUser({ email, name: email.split("@")[0] });
+  const handleLogin = (payload) => {
+    // payload can be email (string) or a user object from signup
+    if (typeof payload === "string") {
+      setUser({ email: payload, name: payload.split("@")[0] });
+    } else if (payload && typeof payload === "object") {
+      setUser({ email: payload.email, name: payload.username || payload.email.split("@")[0], phone: payload.phone });
+    }
     setIsLoggedIn(true);
     setShowLogin(false);
   };
