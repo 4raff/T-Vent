@@ -37,15 +37,24 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
 
+      // Try to parse JSON response
+      let responseData = {};
+      try {
+        responseData = await response.json();
+      } catch (e) {
+        // Response is not JSON (might be HTML error page)
+        responseData = { message: response.statusText };
+      }
+
       if (!response.ok) {
         throw new ApiError(
           response.statusText,
           response.status,
-          await response.json().catch(() => ({}))
+          responseData
         );
       }
 
-      return await response.json();
+      return responseData;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

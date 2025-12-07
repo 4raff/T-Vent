@@ -58,7 +58,7 @@ class AuthController {
             role: user.role || 'user'
         };
 
-      res.status(200).json({ message: 'Login berhasil', token: `Bearer ${token}` });
+      res.status(200).json({ message: 'Login berhasil', token: `Bearer ${token}`, data: userResponse });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Server Error', error: error.message });

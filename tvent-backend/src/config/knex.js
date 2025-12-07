@@ -10,7 +10,7 @@ const config = {
       port: process.env.DB_PORT || 3306,
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'event_kampus_db',
+      database: process.env.DB_NAME || 'tvent_db',
       charset: 'utf8mb4',
     },
     migrations: {
