@@ -11,6 +11,7 @@ const {
 
 
 router.get('/', EventController.getAll);
+router.get('/categories', EventController.getCategories);
 router.get('/:id', validateEventId, handleValidationErrors, EventController.getById);
 router.post('/',checkAuth, validateCreateEvent, handleValidationErrors, EventController.create);
 router.put('/:id',checkAuth, validateUpdateEvent, handleValidationErrors, EventController.update);

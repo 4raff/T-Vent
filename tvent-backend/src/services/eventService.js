@@ -34,6 +34,11 @@ class EventService {
     const event = await eventRepository.findById(id);
     return event ? event.tiket_tersedia : 0;
   }
+
+  // getUniqueCategories: get all unique categories from events
+  async getUniqueCategories() {
+    return eventRepository.getUniqueCategories();
+  }
 }
 
 module.exports = new EventService();

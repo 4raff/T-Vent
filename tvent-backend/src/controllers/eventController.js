@@ -2,8 +2,16 @@
 const eventService = require('../services/eventService');
 const EventController = {
   async getAll(req, res) {
-    const events = await eventService.listEvents();
-    res.json(events);
+    try {
+      const events = await eventService.listEvents();
+      res.json(events);
+    } catch (error) {
+      console.error('Error in EventController.getAll():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat events',
+        error: error.message 
+      });
+    }
   },
   async getById(req, res) {
     const event = await eventService.getEventById(req.params.id);
@@ -105,6 +113,19 @@ const EventController = {
       res.json({ available });
     } catch (e) {
       res.status(400).json({ message: e.message });
+    }
+  },
+
+  async getCategories(req, res) {
+    try {
+      const categories = await eventService.getUniqueCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error('Error in EventController.getCategories():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat kategori',
+        error: error.message 
+      });
     }
   }
 };

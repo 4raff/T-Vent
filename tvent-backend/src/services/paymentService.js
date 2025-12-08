@@ -1,5 +1,5 @@
 const paymentRepository = require('../repositories/paymentRepository');
-
+const notificationRepository = require('../repositories/notificationRepository');
 
 class PaymentService {
   async getPaymentById(id) {
@@ -7,7 +7,21 @@ class PaymentService {
   }
 
   async createPayment(paymentData) {
-    return paymentRepository.create(paymentData);
+    const payment = await paymentRepository.create(paymentData);
+    
+    // Create notification for user
+    if (payment && paymentData.user_id) {
+      await notificationRepository.create({
+        user_id: paymentData.user_id,
+        type: 'payment_submitted',
+        title: 'Pembayaran Terkirim',
+        message: 'Pembayaran Anda telah diterima dan sedang menunggu verifikasi dari admin.',
+        data: JSON.stringify({ payment_id: payment.id }),
+        is_read: false
+      });
+    }
+    
+    return payment;
   }
 
   async updatePayment(id, updates) {
@@ -28,8 +42,19 @@ class PaymentService {
   }
 
   // tolakPembayaran: reject payment
-  async tolakPembayaran(id) {
-    return paymentRepository.update(id, { status: 'failed' });
+  async tolakPembayaran(id, reason = null) {
+    const payment = await paymentRepository.update(id, { 
+      status: 'rejected',
+      rejection_reason: reason
+    });
+    
+    // Update ticket status to rejected if it exists
+    if (payment && payment.ticket_id) {
+      const ticketRepository = require('../repositories/ticketRepository');
+      await ticketRepository.update(payment.ticket_id, { status: 'rejected' });
+    }
+    
+    return payment;
   }
 
   // terimaPembayaran: accept payment and set tanggal_pembayaran
@@ -38,10 +63,30 @@ class PaymentService {
     const now = new Date();
     const mysqlDatetime = now.toISOString().slice(0, 19).replace('T', ' ');
     
-    return paymentRepository.update(id, { 
+    const payment = await paymentRepository.update(id, { 
       status: 'success',
       tanggal_pembayaran: mysqlDatetime
     });
+    
+    // Update ticket status to approved if it exists
+    if (payment && payment.ticket_id) {
+      const ticketRepository = require('../repositories/ticketRepository');
+      await ticketRepository.update(payment.ticket_id, { status: 'approved' });
+    }
+    
+    // Create notification for user
+    if (payment && payment.user_id) {
+      await notificationRepository.create({
+        user_id: payment.user_id,
+        type: 'payment_confirmed',
+        title: 'Pembayaran Dikonfirmasi',
+        message: 'Pembayaran Anda telah berhasil diverifikasi oleh admin.',
+        data: JSON.stringify({ payment_id: payment.id }),
+        is_read: false
+      });
+    }
+    
+    return payment;
   }
 
   // totalPembayaran: get total payment for user

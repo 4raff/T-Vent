@@ -3,8 +3,16 @@ const ticketService = require('../services/ticketService');
 
 const TicketController = {
   async getAll(req, res) {
-    const tickets = await ticketService.listTickets();
-    res.json(tickets);
+    try {
+      const tickets = await ticketService.listTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error('Error in TicketController.getAll():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat tickets',
+        error: error.message 
+      });
+    }
   },
   async getById(req, res) {
     const ticket = await ticketService.getTicketById(req.params.id);

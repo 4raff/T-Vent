@@ -57,7 +57,7 @@ export const authService = {
       // Response format: { success: true, data: { id, username, email, ... } }
       const userData = response.data || response;
       
-      // Save user data to localStorage untuk akses cepat
+      // Simpan user data to localStorage untuk akses cepat
       localStorage.setItem('user', JSON.stringify(userData));
       console.log('User data saved to localStorage:', userData);
       

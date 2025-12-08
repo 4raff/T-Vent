@@ -34,7 +34,7 @@ export default function LoginModal({
           setFieldErrors({
             confirmPassword: ["Konfirmasi password tidak cocok"]
           });
-          setErrorMessage("Validasi gagal");
+          setErrorMessage("Konfirmasi password tidak cocok");
           setIsLoading(false);
           return;
         }

@@ -1,20 +1,28 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import EventCard from "./event-card";
 import { events } from "@/data/events";
 
 export default function EventGrid({ events: passedEvents }) {
+  const router = useRouter();
   const displayEvents = passedEvents || events;
+
+  const handleViewAll = () => {
+    router.push("/events");
+  };
 
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-12">
           <div>
-            <h2 className="text-4xl font-bold text-foreground">Featured Events</h2>
+            <h2 className="text-4xl font-bold text-foreground">Event Unggulans</h2>
             <p className="text-foreground/60 mt-2">Discover amazing events happening around campus</p>
           </div>
-          <button className="px-6 py-2 border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary/5 transition">
+          <button 
+            onClick={handleViewAll}
+            className="px-6 py-2 border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary/5 transition">
             View All →
           </button>
         </div>

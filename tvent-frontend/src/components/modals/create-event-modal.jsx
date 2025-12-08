@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { eventService } from "@/utils/services/eventService";
+import { useToast } from "@/components/common/ToastProvider";
 
 export default function CreateEventModal({ onClose, isLoggedIn }) {
+  const toast = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     category: "art",
@@ -17,11 +21,26 @@ export default function CreateEventModal({ onClose, isLoggedIn }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Event created:", formData);
-    // TODO: Call eventService.createEvent(formData)
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await eventService.createEvent({
+        nama: formData.title,
+        kategori: formData.category,
+        lokasi: formData.location,
+        deskripsi: formData.description,
+        // Format: YYYY-MM-DD HH:mm
+        tanggal: `${formData.date} ${formData.time}`,
+      });
+      toast.showSuccess("Event berhasil dibuat! Tunggu persetujuan admin.");
+      onClose();
+    } catch (error) {
+      console.error("Create event error:", error);
+      toast.showError(error.data?.message || "Gagal membuat event. Coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isLoggedIn) {
@@ -163,9 +182,10 @@ export default function CreateEventModal({ onClose, isLoggedIn }) {
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition"
+              disabled={isSubmitting}
+              className="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Event
+              {isSubmitting ? "Creating..." : "Create Event"}
             </button>
           </div>
         </form>

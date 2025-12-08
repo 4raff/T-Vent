@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"; 
 import { authService } from "@/utils/services/authService"; 
 import { eventService } from "@/utils/services/eventService";
+import { useToast } from "@/components/common/ToastProvider";
 import { INFO_MESSAGES, ERROR_MESSAGES } from "@/constants/messages";
 
 import Navbar from "@/components/layout/navbar";
@@ -15,6 +16,7 @@ import LoginModal from "@/components/modals/login-modal";
 import CreateEventModal from "@/components/modals/create-event-modal";
 
 export default function Home() {
+    const toast = useToast();
     const [showLogin, setShowLogin] = useState(false);
     const [isSignupMode, setIsSignupMode] = useState(false);
     const [showCreateEvent, setShowCreateEvent] = useState(false);
@@ -27,14 +29,18 @@ export default function Home() {
 
     const fetchEvents = async () => {
         try {
+            setLoading(true);
             const response = await eventService.getEvents(); 
             // Response bisa dalam format { data: [...] } atau langsung [...]
             const dataArray = response.data || response;
             setEvents(Array.isArray(dataArray) ? dataArray : []); 
-            setLoading(false);
+            setError(null);
         } catch (err) {
             console.error("Failed to fetch events:", err);
-            setError(ERROR_MESSAGES.FETCH_EVENTS_FAILED);
+            console.error("Error details:", err.message, err.data);
+            setError(err.data?.message || ERROR_MESSAGES.FETCH_EVENTS_FAILED);
+            toast.showError(err.data?.message || "Gagal memuat events. Cek connection mu.");
+        } finally {
             setLoading(false);
         }
     };
@@ -46,13 +52,19 @@ export default function Home() {
         setUser(userData);
         setIsLoggedIn(true);
         setShowLogin(false);
+        toast.showSuccess(`Selamat datang, ${userData.username}!`);
+        
+        // Re-fetch events setelah login (now dengan bearer token)
+        setTimeout(() => {
+            fetchEvents();
+        }, 500);
     };
 
     const handleLogout = () => {
         authService.logout(); 
         setUser(null);
         setIsLoggedIn(false);
-        alert("Logged out successfully!");
+        toast.showSuccess("Berhasil logout!");
     };
 
     useEffect(() => {
@@ -71,6 +83,18 @@ export default function Home() {
         }
         
         fetchEvents();
+
+        // Listen untuk user profile updates dari profile page
+        const handleProfileUpdate = (event) => {
+            const updatedUser = event.detail;
+            setUser(updatedUser);
+        };
+
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
+
+        return () => {
+            window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+        };
     }, []); 
 
     const handleLoginClick = () => {
@@ -93,9 +117,9 @@ export default function Home() {
                 user={user}
                 onLogout={handleLogout}
             />
-            <HeroUnique />
+            <HeroUnique featuredEvent={events.length > 0 ? events[0] : null} />
             <SearchSection />
-            <CategoriesBar />
+            <CategoriesBar events={events} />
             
             {loading && <p className="text-center text-xl p-8">{INFO_MESSAGES.LOADING_EVENTS}</p>}
             {error && <p className="text-center text-red-500 text-xl p-8">Error: {error}</p>}

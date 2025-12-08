@@ -1,10 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function EventCard({ event }) {
+  const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
+
+  const handleViewDetails = () => {
+    router.push(`/events/${event.id}`);
+  };
 
   return (
     <div
@@ -15,8 +21,8 @@ export default function EventCard({ event }) {
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-gray-200">
         <Image
-          src={event.image || "/images/placeholder.svg"}
-          alt={event.title || "Event image" }
+          src={event.poster || "/images/placeholder.svg"}
+          alt={event.nama || "Event image" }
           width={400}
           height={300}
           className={`w-full h-full object-cover transition duration-500 ${
@@ -25,42 +31,52 @@ export default function EventCard({ event }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-        {/* Category Badge */}
+        {/* Status Badge */}
         <div
-          className={`absolute top-4 left-4 px-3 py-1 rounded-full text-white text-xs font-bold bg-black/50 backdrop-blur-sm`}
+          className={`absolute top-4 left-4 px-3 py-1 rounded-full text-white text-xs font-bold ${
+            event.status === 'approved' ? 'bg-green-500' :
+            event.status === 'pending' ? 'bg-yellow-500' :
+            'bg-red-500'
+          } backdrop-blur-sm`}
         >
-          {event.category}
+          {event.status || 'pending'}
         </div>
 
-        {/* Attendees Badge */}
+        {/* Capacity Badge */}
         <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-white text-xs font-bold bg-gradient-to-r from-primary to-secondary">
-          {event.attendees} going
+          {event.tiket_tersedia || 0} left
         </div>
       </div>
 
       {/* Content */}
       <div className="p-5 bg-white">
         <h3 className="font-bold text-lg text-foreground mb-2 line-clamp-2">
-          {event.title}
+          {event.nama}
         </h3>
 
-        <div className="space-y-3 mb-4">
+        {/* Description */}
+        <p className="text-sm text-foreground/60 mb-3 line-clamp-2">
+          {event.deskripsi}
+        </p>
+
+        <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <span>📅</span>
-            <span>{event.date}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-foreground/70">
-            <span>🕐</span>
-            <span>{event.time}</span>
+            <span>{event.tanggal ? new Date(event.tanggal).toLocaleDateString('id-ID') : 'TBD'}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <span>📍</span>
-            <span>{event.location}</span>
+            <span>{event.lokasi}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-foreground/70">
+            <span>💰</span>
+            <span>Rp {event.harga ? parseFloat(event.harga).toLocaleString('id-ID') : '0'}</span>
           </div>
         </div>
 
         {/* Button */}
         <button
+          onClick={handleViewDetails}
           className={`w-full py-2 rounded-lg font-semibold transition ${
             isHovered
               ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"

@@ -19,7 +19,7 @@ class ApiClient {
       ...options.headers,
     };
 
-    // Add JWT token from localStorage if available
+    // Tambah JWT token from localStorage if available
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('jwtToken');
       if (token) {
@@ -37,19 +37,31 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
 
+      // Try to parse JSON response
+      let responseData = {};
+      try {
+        responseData = await response.json();
+      } catch (e) {
+        // Response is not JSON (might be HTML error page)
+        responseData = { message: response.statusText };
+      }
+
       if (!response.ok) {
+        const errorMsg = responseData?.message || responseData?.error || response.statusText;
+        console.error(`API Error [${response.status}]:`, endpoint, errorMsg, responseData);
         throw new ApiError(
-          response.statusText,
+          errorMsg,
           response.status,
-          await response.json().catch(() => ({}))
+          responseData
         );
       }
 
-      return await response.json();
+      return responseData;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
       }
+      console.error('API Network Error:', endpoint, error.message);
       throw new ApiError('Network error', 0, { message: error.message });
     }
   }

@@ -1,7 +1,6 @@
 const ticketRepository = require('../repositories/ticketRepository');
-
-
 const paymentRepository = require('../repositories/paymentRepository');
+const notificationRepository = require('../repositories/notificationRepository');
 
 class TicketService {
   async getTicketById(id) {
@@ -9,7 +8,21 @@ class TicketService {
   }
 
   async createTicket(ticketData) {
-    return ticketRepository.create(ticketData);
+    const ticket = await ticketRepository.create(ticketData);
+    
+    // Create notification for user
+    if (ticket && ticketData.user_id) {
+      await notificationRepository.create({
+        user_id: ticketData.user_id,
+        type: 'ticket_purchased',
+        title: 'Tiket Berhasil Dibeli',
+        message: 'Tiket event Anda telah berhasil dibuat. Silakan tunggu konfirmasi pembayaran.',
+        data: JSON.stringify({ ticket_id: ticket.id }),
+        is_read: false
+      });
+    }
+    
+    return ticket;
   }
 
   async updateTicket(id, updates) {

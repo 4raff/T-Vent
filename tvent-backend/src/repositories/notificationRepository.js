@@ -6,7 +6,8 @@ class NotificationRepository {
   }
 
   async create(notification) {
-    return knex('notifications').insert(notification).returning('*');
+    const [id] = await knex('notifications').insert(notification);
+    return this.findById(id);
   }
 
   async listByUser(user_id) {

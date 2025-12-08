@@ -270,6 +270,65 @@ class AdminService {
       throw new Error(`Gagal export data: ${error.message}`);
     }
   }
+
+  // Get Admin Dashboard Statistics
+  async getStats() {
+    try {
+      const events = await this.eventRepository.list();
+      const users = await this.userRepository.list();
+      const payments = await this.paymentRepository.list();
+
+      // Calculate total revenue from success payments
+      const successPayments = payments.filter(p => p.status === 'success');
+      const totalRevenue = successPayments.reduce((sum, p) => {
+        const amount = parseFloat(p.jumlah) || 0;
+        return sum + amount;
+      }, 0);
+
+      // Count pending payments
+      const pendingPayments = payments.filter(p => p.status === 'pending').length;
+
+      // Count pending events
+      const pendingEvents = events.filter(e => e.status === 'pending').length;
+
+      // Count approved events
+      const approvedEvents = events.filter(e => e.status === 'approved').length;
+
+      // Count rejected events
+      const rejectedEvents = events.filter(e => e.status === 'rejected').length;
+
+      // Count payment statuses
+      const successCountPayments = payments.filter(p => p.status === 'success').length;
+      const failedPayments = payments.filter(p => p.status === 'failed').length;
+
+      // Count user types
+      const adminUsers = users.filter(u => u.role === 'admin').length;
+      const regularUsers = users.filter(u => u.role !== 'admin').length;
+
+      return {
+        totalEvents: events.length,
+        totalUsers: users.length,
+        totalRevenue: Math.round(totalRevenue),
+        pendingPayments: pendingPayments,
+        events: {
+          pending: pendingEvents,
+          approved: approvedEvents,
+          rejected: rejectedEvents,
+        },
+        payments: {
+          success: successCountPayments,
+          pending: pendingPayments,
+          failed: failedPayments,
+        },
+        users: {
+          admin: adminUsers,
+          regular: regularUsers,
+        },
+      };
+    } catch (error) {
+      throw new Error(`Gagal mendapatkan stats: ${error.message}`);
+    }
+  }
 }
 
 module.exports = new AdminService();
