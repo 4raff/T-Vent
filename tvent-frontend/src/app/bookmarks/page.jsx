@@ -3,17 +3,21 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/utils/services/authService";
+import { bookmarkService } from "@/utils/services/bookmarkService";
+import { eventService } from "@/utils/services/eventService";
+import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 
 export default function Bookmarks() {
   const router = useRouter();
+  const toast = useToast();
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const fetchBookmarks = async () => {
       try {
         if (!authService.isAuthenticated()) {
           router.push("/");
@@ -22,17 +26,45 @@ export default function Bookmarks() {
         const userData = authService.getUser();
         setUser(userData);
         
-        // TODO: Fetch user's bookmarks from API
-        setBookmarks([]);
+        // Fetch user's bookmarks from API
+        const userBookmarks = await bookmarkService.getUserBookmarks(userData.id);
+        
+        // Fetch event details for each bookmark
+        const bookmarksWithEvents = await Promise.all(
+          userBookmarks.map(async (bookmark) => {
+            try {
+              const event = await eventService.getEvent(bookmark.event_id);
+              return { ...bookmark, event };
+            } catch (error) {
+              console.error(`Error fetching event ${bookmark.event_id}:`, error);
+              return bookmark;
+            }
+          })
+        );
+        
+        setBookmarks(bookmarksWithEvents);
         setLoading(false);
       } catch (error) {
         console.error("Error:", error);
-        router.push("/");
+        toast.showError("Gagal memuat bookmarks");
+        setLoading(false);
       }
     };
 
-    checkAuth();
-  }, [router]);
+    fetchBookmarks();
+  }, [router, toast]);
+
+  const handleRemoveBookmark = async (bookmarkId, e) => {
+    e.stopPropagation();
+    try {
+      await bookmarkService.removeBookmark(bookmarkId);
+      setBookmarks(bookmarks.filter(b => b.id !== bookmarkId));
+      toast.showSuccess("Bookmark dihapus");
+    } catch (error) {
+      console.error("Error removing bookmark:", error);
+      toast.showError("Gagal menghapus bookmark");
+    }
+  };
 
   if (loading) {
     return (
@@ -89,11 +121,8 @@ export default function Bookmarks() {
                       Rp{bookmark.event?.harga?.toLocaleString("id-ID")}
                     </span>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // TODO: Remove bookmark
-                      }}
-                      className="text-2xl hover:opacity-70"
+                      onClick={(e) => handleRemoveBookmark(bookmark.id, e)}
+                      className="text-2xl hover:opacity-70 transition"
                     >
                       ❤️
                     </button>

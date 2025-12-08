@@ -12,6 +12,7 @@ export const eventService = {
       const response = await apiClient.get(endpoint);
       return response;
     } catch (error) {
+      console.error('eventService.getEvents error:', error.message, error.data);
       throw error;
     }
   },
@@ -53,7 +54,7 @@ export const eventService = {
   },
 
   /**
-   * Delete event
+   * Hapus event
    */
   async deleteEvent(id) {
     try {

@@ -1,4 +1,4 @@
-export function extractErrorMessage(error, fallback = 'Something went wrong') {
+export function extractErrorMessage(error, fallback = 'Terjadi kesalahan') {
     if (!error || typeof error.message !== 'string') return fallback;
 
     const lines = error.message.split('\n').map(line => line.trim()).filter(Boolean);

@@ -5,33 +5,57 @@ import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import { authService } from "@/utils/services/authService";
 import { eventService } from "@/utils/services/eventService";
+import { reviewService } from "@/utils/services/reviewService";
+import { bookmarkService } from "@/utils/services/bookmarkService";
+import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 
 export default function EventDetail() {
   const router = useRouter();
   const params = useParams();
+  const toast = useToast();
   const eventId = params?.id;
 
   const [event, setEvent] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkId, setBookmarkId] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [showBooking, setShowBooking] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isKirimting, setIsKirimting] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewFeedback, setReviewFeedback] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
       try {
+        let userData = null;
         if (authService.isAuthenticated()) {
-          const userData = authService.getUser();
+          userData = authService.getUser();
           setUser(userData);
         }
 
         if (eventId) {
           const eventData = await eventService.getEvent(eventId);
           setEvent(eventData);
+          
+          // Check if user has bookmarked this event
+          if (userData) {
+            const bookmark = await bookmarkService.isEventBookmarked(userData.id, parseInt(eventId));
+            if (bookmark) {
+              setIsBookmarked(true);
+              setBookmarkId(bookmark.id);
+            }
+          }
+          
+          // Fetch reviews for this event
+          fetchReviews();
         }
         setLoading(false);
       } catch (error) {
@@ -43,13 +67,59 @@ export default function EventDetail() {
     fetchEvent();
   }, [eventId]);
 
+  const fetchReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const allReviews = await reviewService.getReviews();
+      const reviewArray = Array.isArray(allReviews) ? allReviews : allReviews.data || [];
+      // Filter reviews for this event
+      const eventReviews = reviewArray.filter(r => r.event_id === parseInt(eventId));
+      setReviews(eventReviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleKirimReview = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      toast.showError("Silakan login untuk memberi review");
+      return;
+    }
+
+    setIsKirimting(true);
+    try {
+      await reviewService.submitReview({
+        user_id: user.id,
+        event_id: parseInt(eventId),
+        rating: reviewRating,
+        feedback: reviewFeedback,
+        is_anonymous: isAnonymous,
+      });
+      toast.showSuccess("Review berhasil dikirim!");
+      setReviewFeedback("");
+      setReviewRating(5);
+      setIsAnonymous(false);
+      setShowReviewForm(false);
+      fetchReviews(); // Refresh reviews
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      toast.showError(error.data?.message || "Gagal mengirim review");
+    } finally {
+      setIsKirimting(false);
+    }
+  };
+
   const handleBooking = async () => {
     if (!user) {
       router.push("/");
       return;
     }
 
-    setIsSubmitting(true);
+    setIsKirimting(true);
     try {
       // Redirect to checkout page with event and quantity
       router.push(
@@ -57,9 +127,31 @@ export default function EventDetail() {
       );
     } catch (error) {
       console.error("Booking error:", error);
-      alert("Failed to proceed to checkout");
+      toast.showError(error.data?.message || "Gagal lanjut ke checkout");
     } finally {
-      setIsSubmitting(false);
+      setIsKirimting(false);
+    }
+  };
+
+  const handleBookmarkToggle = async () => {
+    if (!user) {
+      toast.showError("Silakan login untuk bookmark event");
+      return;
+    }
+
+    try {
+      const result = await bookmarkService.toggleBookmark(user.id, parseInt(eventId));
+      setIsBookmarked(result.isBookmarked);
+      setBookmarkId(result.bookmarkId);
+      
+      if (result.isBookmarked) {
+        toast.showSuccess("Event berhasil dibookmark");
+      } else {
+        toast.showSuccess("Bookmark dihapus");
+      }
+    } catch (error) {
+      console.error("Error toggling bookmark:", error);
+      toast.showError("Gagal mengubah bookmark");
     }
   };
 
@@ -131,8 +223,8 @@ export default function EventDetail() {
                   </span>
                 </div>
                 <button
-                  onClick={() => setIsBookmarked(!isBookmarked)}
-                  className="text-3xl"
+                  onClick={handleBookmarkToggle}
+                  className="text-3xl hover:opacity-70 transition"
                 >
                   {isBookmarked ? "❤️" : "🤍"}
                 </button>
@@ -190,10 +282,106 @@ export default function EventDetail() {
 
             {/* Reviews Section */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Reviews</h2>
-              <div className="bg-gray-50 rounded-lg p-6 text-center">
-                <p className="text-gray-500">No reviews yet</p>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">Reviews</h2>
+                {user && (
+                  <button
+                    onClick={() => setShowReviewForm(!showReviewForm)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-semibold"
+                  >
+                    {showReviewForm ? "Batal" : "Write a Review"}
+                  </button>
+                )}
               </div>
+
+              {/* Review Form */}
+              {showReviewForm && user && (
+                <form onKirim={handleKirimReview} className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rating
+                    </label>
+                    <select
+                      value={reviewRating}
+                      onChange={(e) => setReviewRating(parseInt(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value={5}>⭐⭐⭐⭐⭐ Excellent</option>
+                      <option value={4}>⭐⭐⭐⭐ Good</option>
+                      <option value={3}>⭐⭐⭐ Average</option>
+                      <option value={2}>⭐⭐ Poor</option>
+                      <option value={1}>⭐ Terrible</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Review
+                    </label>
+                    <textarea
+                      value={reviewFeedback}
+                      onChange={(e) => setReviewFeedback(e.target.value)}
+                      placeholder="Share your experience with this event..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4 flex items-center">
+                    <input
+                      type="checkbox"
+                      id="isAnonymous"
+                      checked={isAnonymous}
+                      onChange={(e) => setIsAnonymous(e.target.checked)}
+                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                    />
+                    <label htmlFor="isAnonymous" className="ml-2 text-sm font-medium text-gray-700">
+                      Post as Anonymous
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isKirimting}
+                    className="w-full py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400"
+                  >
+                    {isKirimting ? "Kirimting..." : "Kirim Review"}
+                  </button>
+                </form>
+              )}
+
+              {/* Reviews List */}
+              {reviewsLoading ? (
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <p className="text-gray-500">Loading reviews...</p>
+                </div>
+              ) : reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {review.is_anonymous ? "Anonymous" : review.username || "User"}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(review.created_at).toLocaleDateString("id-ID")}
+                          </p>
+                        </div>
+                        <div className="text-xl">
+                          {"⭐".repeat(review.rating)}
+                        </div>
+                      </div>
+                      <p className="text-gray-700">{review.feedback}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <p className="text-gray-500">No reviews yet. Be the first to review!</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -270,17 +458,17 @@ export default function EventDetail() {
 
                   <button
                     onClick={handleBooking}
-                    disabled={isSubmitting}
+                    disabled={isKirimting}
                     className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400"
                   >
-                    {isSubmitting ? "Processing..." : "Confirm Booking"}
+                    {isKirimting ? "Memproses..." : "Confirm Booking"}
                   </button>
 
                   <button
                     onClick={() => setShowBooking(false)}
                     className="w-full py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
                   >
-                    Cancel
+                    Batal
                   </button>
                 </div>
               )}

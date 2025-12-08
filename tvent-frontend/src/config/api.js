@@ -38,4 +38,13 @@ export const API_ENDPOINTS = {
     CREATE: '/bookmarks',
     DELETE: (id) => `/bookmarks/${id}`,
   },
+  // Reviews
+  REVIEWS: {
+    LIST: '/reviews',
+    GET: (id) => `/reviews/${id}`,
+    CREATE: '/reviews',
+    SUBMIT: '/reviews/submit',
+    UPDATE: (id) => `/reviews/${id}`,
+    DELETE: (id) => `/reviews/${id}`,
+  },
 };

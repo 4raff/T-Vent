@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { authService } from "@/utils/services/authService";
+import { apiClient } from "@/utils/api/client";
 
 export default function Navbar({
   onLoginClick,
@@ -19,6 +20,7 @@ export default function Navbar({
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Update state whenever props change (from parent Home page)
   useEffect(() => {
@@ -45,7 +47,53 @@ export default function Navbar({
     };
 
     checkAuth();
+
+    // Listen untuk user profile updates
+    const handleProfileUpdate = (event) => {
+      const updatedUser = event.detail;
+      setUser(updatedUser);
+    };
+
+    window.addEventListener('userProfileUpdated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+    };
   }, [pathname]);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (isLoggedIn && user?.id) {
+        try {
+          const response = await apiClient.get(`/notifications/user/${user.id}`);
+          const notifications = Array.isArray(response) ? response : response.data || [];
+          const unreadNotifications = notifications.filter(n => !n.is_read);
+          setUnreadCount(unreadNotifications.length);
+        } catch (error) {
+          console.error("Error fetching notifications:", error);
+          setUnreadCount(0);
+        }
+      }
+    };
+
+    // Fetch immediately
+    fetchUnreadCount();
+
+    // Set up interval to check every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    // Listen for notification updates from other pages
+    const handleNotificationUpdate = () => {
+      fetchUnreadCount();
+    };
+    window.addEventListener('notificationUpdated', handleNotificationUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notificationUpdated', handleNotificationUpdate);
+    };
+  }, [isLoggedIn, user?.id]);
 
   const handleLogout = () => {
     authService.logout();
@@ -99,7 +147,7 @@ export default function Navbar({
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn && user ? (
               <div className="flex items-center gap-4">
-                {/* Notification Bell */}
+                {/* Notification Bell with Badge */}
                 <Link
                   href="/notifications"
                   className="relative p-2 text-gray-600 hover:text-gray-900 transition"
@@ -118,6 +166,12 @@ export default function Navbar({
                       d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                     />
                   </svg>
+                  {/* Badge */}
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
 
                 {/* User Dropdown */}
@@ -321,6 +375,18 @@ export default function Navbar({
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
                 >
                   ❤️ Bookmarks
+                </Link>
+                <Link
+                  href="/notifications"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="relative block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  🔔 Notifications
+                  {unreadCount > 0 && (
+                    <span className="inline-block ml-2 px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 <Link
                   href="/create-event"

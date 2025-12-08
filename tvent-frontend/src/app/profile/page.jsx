@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/utils/services/authService";
 import { apiClient } from "@/utils/api/client";
+import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const toast = useToast();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -63,11 +65,27 @@ export default function ProfilePage() {
       const updatedUser = { ...user, ...response.data };
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
+      setFormData({
+        username: updatedUser.username || "",
+        email: updatedUser.email || "",
+        no_handphone: updatedUser.no_handphone || "",
+      });
       setIsEditing(false);
-      alert("Profile updated successfully!");
+      toast.showSuccess("Profil berhasil diupdate!");
+      
+      // Dispatch custom event untuk notify home page bahwa user data updated
+      window.dispatchEvent(new CustomEvent('userProfileUpdated', { 
+        detail: updatedUser 
+      }));
     } catch (error) {
       console.error("Save error:", error);
-      alert("Failed to update profile");
+      toast.showError(error.data?.message || "Gagal update profil. Coba lagi.");
+      // Revert form data ke original
+      setFormData({
+        username: user?.username || "",
+        email: user?.email || "",
+        no_handphone: user?.no_handphone || "",
+      });
     } finally {
       setIsSaving(false);
     }

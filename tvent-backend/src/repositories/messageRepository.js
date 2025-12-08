@@ -6,7 +6,8 @@ class MessageRepository {
   }
 
   async create(message) {
-    return knex('messages').insert(message).returning('*');
+    const [id] = await knex('messages').insert(message);
+    return this.findById(id);
   }
 
   async listByUser(user_id) {

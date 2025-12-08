@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authService } from "@/utils/services/authService";
 import { apiClient } from "@/utils/api/client";
+import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import { formatRupiah } from "@/utils/formatCurrency";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
   const eventId = searchParams.get("eventId");
   const quantity = parseInt(searchParams.get("quantity")) || 1;
 
@@ -20,6 +23,10 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("transfer");
   const [proofFile, setProofFile] = useState(null);
   const [proofPreview, setProofPreview] = useState(null);
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [ewalletProviders, setEwalletProviders] = useState([]);
+  const [selectedBankId, setSelectedBankId] = useState(null);
+  const [selectedEwalletId, setSelectedEwalletId] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -47,19 +54,30 @@ export default function CheckoutPage() {
           return;
         }
 
-        // TODO: Replace with actual API call
-        const mockEvent = {
-          id: eventId,
-          nama: "Tech Conference 2025",
-          harga: 150000,
-          kategori: "Technology",
-          lokasi: "Jakarta Convention Center",
-        };
+        // Call actual API to get event
+        const eventData = await apiClient.get(`/events/${eventId}`);
+        const event = eventData.data || eventData;
+        setEvent(event);
+        
+        // Fetch bank accounts and ewallet providers
+        const banksResponse = await apiClient.get('/bank-accounts');
+        const banks = Array.isArray(banksResponse) ? banksResponse : banksResponse.data || [];
+        setBankAccounts(banks);
+        if (banks.length > 0) {
+          setSelectedBankId(banks[0].id);
+        }
 
-        setEvent(mockEvent);
+        const ewalletsResponse = await apiClient.get('/ewallet-providers');
+        const ewallets = Array.isArray(ewalletsResponse) ? ewalletsResponse : ewalletsResponse.data || [];
+        setEwalletProviders(ewallets);
+        if (ewallets.length > 0) {
+          setSelectedEwalletId(ewallets[0].id);
+        }
+
         setLoading(false);
       } catch (error) {
         console.error("Error fetching event:", error);
+        toast.showError("Gagal memuat event. Coba lagi.");
         router.push("/events");
       }
     };
@@ -69,13 +87,45 @@ export default function CheckoutPage() {
     }
   }, [eventId, router]);
 
+  const compressImage = (canvas, quality = 0.7) => {
+    return canvas.toDataURL('image/jpeg', quality);
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (limit to 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.showWarning("Ukuran file terlalu besar. Maksimal 2MB.");
+        return;
+      }
+
       setProofFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProofPreview(reader.result);
+        // Compress image
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Resize if larger than 1200px
+          if (width > 1200) {
+            height = (height * 1200) / width;
+            width = 1200;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG with 70% quality
+          const compressed = compressImage(canvas, 0.7);
+          setProofPreview(compressed);
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
@@ -85,31 +135,58 @@ export default function CheckoutPage() {
     e.preventDefault();
 
     if (!proofFile && paymentMethod !== "card") {
-      alert("Please upload payment proof");
+      toast.showWarning("Silakan upload bukti pembayaran");
       return;
     }
 
     setIsProcessing(true);
+    let ticketId = null;
     try {
-      // TODO: Implement actual payment processing
-      // For now, create a mock payment record
-      const formData = new FormData();
-      formData.append("user_id", user.id);
-      formData.append("jumlah_tiket", quantity);
-      formData.append("harga_total", subtotal);
-      formData.append("status", "pending");
-      formData.append("metode_pembayaran", paymentMethod);
+      // Map payment method to backend expected values
+      const methodMapping = {
+        'transfer': 'bank_transfer',
+        'ewallet': 'e-wallet'
+      };
 
-      if (proofFile) {
-        formData.append("bukti_pembayaran", proofFile);
+      // Step 1: Create payment FIRST (before ticket)
+      const paymentData = {
+        user_id: parseInt(user.id),
+        jumlah: parseFloat(event.harga * quantity),
+        metode_pembayaran: methodMapping[paymentMethod] || paymentMethod,
+        bukti_pembayaran: proofPreview || null // Include proof image as base64
+      };
+
+      const paymentResponse = await apiClient.post("/payments", paymentData);
+      const paymentId = paymentResponse.data?.id || paymentResponse.id;
+
+      if (!paymentId) {
+        throw new Error("Gagal membuat pembayaran");
       }
 
-      // Mock successful payment
-      alert("Payment submitted successfully! Waiting for admin verification.");
+      // Step 2: Create ticket AFTER successful payment
+      const ticketResponse = await apiClient.post("/tickets", {
+        event_id: parseInt(eventId),
+        user_id: parseInt(user.id),
+        jumlah: parseInt(quantity),
+        total_harga: parseFloat(event.harga * quantity)
+      });
+
+      ticketId = ticketResponse.data?.id || ticketResponse.id;
+      
+      if (!ticketId) {
+        throw new Error("Gagal membuat tiket");
+      }
+
+      // Step 3: Update payment with ticket_id
+      await apiClient.put(`/payments/${paymentId}`, {
+        ticket_id: parseInt(ticketId)
+      });
+
+      toast.showSuccess("Pembayaran berhasil dikirim! Tunggu verifikasi admin.");
       router.push("/my-tickets");
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Failed to process payment. Please try again.");
+      toast.showError(error.data?.message || error.message || "Gagal proses pembayaran. Coba lagi.");
     } finally {
       setIsProcessing(false);
     }
@@ -170,8 +247,8 @@ export default function CheckoutPage() {
                     <span className="font-semibold">{event.kategori}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>{quantity} tickets × Rp{event.harga.toLocaleString("id-ID")}</span>
-                    <span>Rp{subtotal.toLocaleString("id-ID")}</span>
+                    <span>{quantity} tickets × {formatRupiah(event.harga)}</span>
+                    <span>{formatRupiah(subtotal)}</span>
                   </div>
                 </div>
               </div>
@@ -195,7 +272,7 @@ export default function CheckoutPage() {
                     <div className="ml-4">
                       <p className="font-semibold text-gray-900">Bank Transfer</p>
                       <p className="text-sm text-gray-600">
-                        Transfer ke rekening T-Vent untuk konfirmasi pembayaran
+                        Transfer ke salah satu rekening bank kami
                       </p>
                     </div>
                   </label>
@@ -213,25 +290,7 @@ export default function CheckoutPage() {
                     <div className="ml-4">
                       <p className="font-semibold text-gray-900">E-Wallet</p>
                       <p className="text-sm text-gray-600">
-                        GCash, PayMaya, atau dompet digital lainnya
-                      </p>
-                    </div>
-                  </label>
-
-                  {/* Credit Card */}
-                  <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-600 transition">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="card"
-                      checked={paymentMethod === "card"}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-5 h-5"
-                    />
-                    <div className="ml-4">
-                      <p className="font-semibold text-gray-900">Credit Card</p>
-                      <p className="text-sm text-gray-600">
-                        Visa, Mastercard, atau American Express
+                        Transfer via dompet digital
                       </p>
                     </div>
                   </label>
@@ -239,7 +298,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Payment Proof Upload */}
-              {paymentMethod !== "card" && (
+              {(paymentMethod === "transfer" || paymentMethod === "ewallet") && (
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">
                     Upload Payment Proof
@@ -329,37 +388,72 @@ export default function CheckoutPage() {
               <div className="space-y-3 border-b pb-4 mb-4 text-gray-700">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>Rp{subtotal.toLocaleString("id-ID")}</span>
+                  <span>{formatRupiah(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax (10%)</span>
-                  <span>Rp{taxAmount.toLocaleString("id-ID")}</span>
+                  <span>{formatRupiah(taxAmount)}</span>
                 </div>
               </div>
 
               <div className="flex justify-between mb-6">
                 <span className="text-lg font-bold text-gray-900">Total</span>
                 <span className="text-2xl font-bold text-purple-600">
-                  Rp{total.toLocaleString("id-ID")}
+                  {formatRupiah(total)}
                 </span>
               </div>
 
               {/* Bank Details */}
-              {paymentMethod === "transfer" && (
+              {paymentMethod === "transfer" && bankAccounts.length > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-sm font-semibold text-blue-900 mb-3">
                     Bank Account Details
                   </p>
                   <div className="space-y-2 text-sm text-blue-800">
-                    <div>
-                      <p className="font-semibold">Bank Mandiri</p>
-                      <p>1230456789</p>
-                      <p>a/n PT T-Vent Indonesia</p>
-                    </div>
-                    <hr className="border-blue-200 my-2" />
-                    <p className="text-xs">
-                      Gunakan format referensi: ORDER-{Date.now()}
-                    </p>
+                    {bankAccounts.map((bank) => (
+                      <div
+                        key={bank.id}
+                        className={`p-3 rounded cursor-pointer transition ${
+                          selectedBankId === bank.id
+                            ? "bg-blue-100 border-2 border-blue-600"
+                            : "bg-white border border-blue-300 hover:bg-blue-50"
+                        }`}
+                        onClick={() => setSelectedBankId(bank.id)}
+                      >
+                        <p className="font-semibold">{bank.bank_name}</p>
+                        <p>{bank.account_number}</p>
+                        <p className="text-xs mt-1">a/n {bank.account_holder}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* E-Wallet Instructions */}
+              {paymentMethod === "ewallet" && ewalletProviders.length > 0 && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <p className="text-sm font-semibold text-green-900 mb-3">
+                    Select E-Wallet Provider
+                  </p>
+                  <div className="space-y-2 text-sm text-green-800">
+                    {ewalletProviders.map((provider) => (
+                      <div
+                        key={provider.id}
+                        className={`p-3 rounded cursor-pointer transition ${
+                          selectedEwalletId === provider.id
+                            ? "bg-green-100 border-2 border-green-600"
+                            : "bg-white border border-green-300 hover:bg-green-50"
+                        }`}
+                        onClick={() => setSelectedEwalletId(provider.id)}
+                      >
+                        <p className="font-semibold">{provider.name}</p>
+                        {provider.instructions && (
+                          <p className="text-xs mt-1 text-gray-600">
+                            {provider.instructions}
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

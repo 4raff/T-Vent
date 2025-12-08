@@ -26,7 +26,17 @@ class EventRepository {
   }
 
   async list() {
-    return knex('events').select('*');
+    try {
+      return await knex('events')
+        .leftJoin('users', 'events.created_by', 'users.id')
+        .select(
+          'events.*',
+          'users.username as creator_name'
+        );
+    } catch (error) {
+      console.error('Error in EventRepository.list():', error.message);
+      throw error;
+    }
   }
 
   // Search events by name or description
@@ -35,6 +45,23 @@ class EventRepository {
       .where('nama', 'like', `%${query}%`)
       .orWhere('deskripsi', 'like', `%${query}%`)
       .select('*');
+  }
+
+  // Get unique categories from events
+  async getUniqueCategories() {
+    try {
+      const result = await knex('events')
+        .select('kategori')
+        .distinct()
+        .whereNotNull('kategori')
+        .orderBy('kategori', 'asc');
+      
+      // Return array of category strings instead of objects
+      return result.map(row => row.kategori).filter(cat => cat);
+    } catch (error) {
+      console.error('Error in EventRepository.getUniqueCategories():', error.message);
+      throw error;
+    }
   }
 }
 

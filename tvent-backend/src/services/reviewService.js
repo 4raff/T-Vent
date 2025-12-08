@@ -23,7 +23,7 @@ class ReviewService {
   }
 
   // submitReview: user submits review for event
-  async submitReview(user_id, event_id, rating, feedback) {
+  async submitReview(user_id, event_id, rating, feedback, is_anonymous = false) {
     // Satu user satu review per event
     const existing = await reviewRepository.findByUserAndEvent(user_id, event_id);
     if (existing) throw new Error('Sudah review event ini');
@@ -32,6 +32,7 @@ class ReviewService {
       event_id,
       rating,
       feedback,
+      is_anonymous,
     });
   }
 }

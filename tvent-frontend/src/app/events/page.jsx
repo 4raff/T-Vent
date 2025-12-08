@@ -1,30 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { eventService } from "@/utils/services/eventService";
 import { authService } from "@/utils/services/authService";
+import { useToast } from "@/components/common/ToastProvider";
+import { categoriesService } from "@/utils/services/categoriesService";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 
 export default function EventsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const toast = useToast();
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [user, setUser] = useState(null);
 
-  const categories = [
-    "All",
-    "Technology",
-    "Music",
-    "Sports",
-    "Art",
-    "Business",
-    "Education",
-  ];
+  useEffect(() => {
+    // Get initial values from URL params
+    const searchFromUrl = searchParams.get("search") || "";
+    const categoryFromUrl = searchParams.get("category") || "All";
+    
+    setSearchTerm(searchFromUrl);
+    setSelectedCategory(categoryFromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -35,14 +41,27 @@ export default function EventsPage() {
 
     const fetchEvents = async () => {
       try {
-        const data = await eventService.getEvents();
-        const eventsArray = data.data || data;
+        setError(null);
+        
+        // Fetch events
+        const eventData = await eventService.getEvents();
+        const eventsArray = eventData.data || eventData;
         setEvents(eventsArray || []);
         setFilteredEvents(eventsArray || []);
         setLoading(false);
+
+        // Fetch categories
+        const categoriesData = await categoriesService.getCategories();
+        const categoriesArray = Array.isArray(categoriesData) ? categoriesData : [];
+        setCategories(["All", ...categoriesArray]);
+        setLoadingCategories(false);
       } catch (error) {
-        console.error("Error fetching events:", error);
+        console.error("Error fetching:", error);
+        const errorMsg = error.data?.message || "Gagal memuat data. Coba lagi.";
+        setError(errorMsg);
+        toast.showError(errorMsg);
         setLoading(false);
+        setLoadingCategories(false);
       }
     };
 
@@ -65,7 +84,8 @@ export default function EventsPage() {
       filtered = filtered.filter(
         (event) =>
           event.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          event.deskripsi.toLowerCase().includes(searchTerm.toLowerCase())
+          event.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.lokasi.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -173,7 +193,7 @@ export default function EventsPage() {
 
                   <div className="flex items-center justify-between mb-4">
                     <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
-                      {event.kategori}
+                      {event.status}
                     </span>
                     <span className="text-lg font-bold text-purple-600">
                       Rp{event.harga?.toLocaleString("id-ID")}

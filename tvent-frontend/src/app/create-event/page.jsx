@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/utils/services/authService";
 import { eventService } from "@/utils/services/eventService";
+import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 
@@ -20,6 +21,7 @@ const CATEGORIES = [
 
 export default function CreateEventPage() {
   const router = useRouter();
+  const toast = useToast();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,7 +117,7 @@ export default function CreateEventPage() {
     e.preventDefault();
 
     if (!validateForm()) {
-      alert("Please fix the errors below");
+      toast.showError("Silakan perbaiki error di bawah");
       return;
     }
 
@@ -132,11 +134,11 @@ export default function CreateEventPage() {
         jumlah_tiket: parseInt(formData.jumlah_tiket),
       });
 
-      alert("Event created successfully! Waiting for admin approval.");
+      toast.showSuccess("Event berhasil dibuat! Tunggu persetujuan admin.");
       router.push("/my-events");
     } catch (error) {
       console.error("Submit error:", error);
-      alert("Failed to create event. Please try again.");
+      toast.showError(error.data?.message || "Gagal membuat event. Coba lagi.");
     } finally {
       setIsSubmitting(false);
     }

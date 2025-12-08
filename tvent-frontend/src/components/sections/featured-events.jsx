@@ -34,7 +34,7 @@ export default function FeaturedEvents() {
         {/* Section header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent-1 bg-clip-text text-transparent mb-4">
-            Featured Events
+            Event Unggulans
           </h2>
           <p className="text-foreground/70 text-lg max-w-2xl mx-auto">
             Discover a curated selection of events celebrating art, culture, and

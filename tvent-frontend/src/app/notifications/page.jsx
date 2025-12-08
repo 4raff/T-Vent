@@ -36,108 +36,59 @@ export default function NotificationsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // TODO: Replace with actual API calls
-        const mockNotifications = [
-          {
-            id: 1,
-            type: "event_approved",
-            title: "Event Approved",
-            message: "Your event 'Tech Conference 2025' has been approved and is now live!",
-            timestamp: new Date(Date.now() - 3600000),
-            read: false,
-            icon: "✅",
-          },
-          {
-            id: 2,
-            type: "ticket_purchased",
-            title: "Ticket Purchased",
-            message: "Your ticket for 'Annual Music Fest' has been confirmed.",
-            timestamp: new Date(Date.now() - 7200000),
-            read: false,
-            icon: "🎫",
-          },
-          {
-            id: 3,
-            type: "payment_confirmed",
-            title: "Payment Confirmed",
-            message: "Your payment of Rp150,000 for 'Tech Conference 2025' has been verified.",
-            timestamp: new Date(Date.now() - 86400000),
-            read: true,
-            icon: "💳",
-          },
-          {
-            id: 4,
-            type: "event_reminder",
-            title: "Event Starting Soon",
-            message: "Your event 'Web Development Workshop' starts in 2 days!",
-            timestamp: new Date(Date.now() - 172800000),
-            read: true,
-            icon: "⏰",
-          },
-          {
-            id: 5,
-            type: "review_request",
-            title: "Leave a Review",
-            message: "How was your experience at 'Digital Marketing Conference'? Leave a review now!",
-            timestamp: new Date(Date.now() - 259200000),
-            read: true,
-            icon: "⭐",
-          },
-        ];
+        if (!user) return;
 
-        const mockMessages = [
-          {
-            id: 1,
-            from: "Tech Conference 2025",
-            fromId: "event_1",
-            type: "event",
-            lastMessage: "Thank you for registering! We're excited to see you there.",
-            timestamp: new Date(Date.now() - 3600000),
-            unread: 0,
-            avatar: "https://ui-avatars.com/api/?name=Tech+Conference",
-          },
-          {
-            id: 2,
-            from: "Admin Support",
-            fromId: "admin",
-            type: "admin",
-            lastMessage: "Your event is pending approval. Please check your email for details.",
-            timestamp: new Date(Date.now() - 7200000),
-            unread: 1,
-            avatar: "https://ui-avatars.com/api/?name=Admin+Support",
-          },
-          {
-            id: 3,
-            from: "Annual Music Fest",
-            fromId: "event_2",
-            type: "event",
-            lastMessage: "Don't miss the opening performance tomorrow at 8 PM!",
-            timestamp: new Date(Date.now() - 86400000),
-            unread: 0,
-            avatar: "https://ui-avatars.com/api/?name=Music+Fest",
-          },
-        ];
+        // Fetch notifications from API
+        const notificationsResponse = await apiClient.get(`/notifications/user/${user.id}`);
+        const notificationsData = Array.isArray(notificationsResponse) 
+          ? notificationsResponse 
+          : notificationsResponse.data || [];
+        
+        // Format notifications with icons
+        const formattedNotifications = notificationsData.map((notif) => ({
+          ...notif,
+          icon: getIconForType(notif.type),
+          timestamp: new Date(notif.created_at),
+          read: notif.is_read,
+        }));
 
-        setNotifications(mockNotifications);
-        setMessages(mockMessages);
+        setNotifications(formattedNotifications);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching notifications:", error);
+        setNotifications([]);
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  const getIconForType = (type) => {
+    const icons = {
+      'event_approved': '✅',
+      'ticket_purchased': '🎫',
+      'payment_submitted': '💳',
+      'payment_confirmed': '✔️',
+      'event_reminder': '⏰',
+      'review_request': '⭐',
+      'message': '💬',
+    };
+    return icons[type] || '📬';
+  };
 
   const markAsRead = async (notificationId) => {
     try {
-      // TODO: API call to mark notification as read
+      await apiClient.patch(`/notifications/${notificationId}/read`);
       setNotifications((prev) =>
         prev.map((notif) =>
           notif.id === notificationId ? { ...notif, read: true } : notif
         )
       );
+      // Dispatch event to update navbar badge
+      window.dispatchEvent(new Event('notificationUpdated'));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }

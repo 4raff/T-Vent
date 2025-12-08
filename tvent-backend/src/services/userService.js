@@ -28,7 +28,7 @@ class userService {
       throw new Error('User not found');
     }
 
-    const [updatedUser] = await userRepository.update(userId, updates);
+    const updatedUser = await userRepository.update(userId, updates);
 
     // Remove password
     delete updatedUser.password;

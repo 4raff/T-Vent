@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/utils/services/authService";
+import { apiClient } from "@/utils/api/client";
+import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 
 export default function Dashboard() {
   const router = useRouter();
+  const toast = useToast();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     tickets: 0,
@@ -25,15 +28,37 @@ export default function Dashboard() {
         }
         const userData = authService.getUser();
         setUser(userData);
+
+        // Fetch stats from APIs
+        const ticketsResponse = await apiClient.get(`/tickets`);
+        const eventsResponse = await apiClient.get(`/events`);
+        const bookmarksResponse = await apiClient.get(`/bookmarks`);
+
+        const allTickets = Array.isArray(ticketsResponse) ? ticketsResponse : ticketsResponse.data || [];
+        const allEvents = Array.isArray(eventsResponse) ? eventsResponse : eventsResponse.data || [];
+        const allBookmarks = Array.isArray(bookmarksResponse) ? bookmarksResponse : bookmarksResponse.data || [];
+
+        // Filter milik user
+        const userTickets = allTickets.filter(t => t.user_id === userData.id);
+        const userEvents = allEvents.filter(e => e.user_id === userData.id);
+        const userBookmarks = allBookmarks.filter(b => b.user_id === userData.id);
+
+        setStats({
+          tickets: userTickets.length,
+          events: userEvents.length,
+          bookmarks: userBookmarks.length,
+        });
         setLoading(false);
       } catch (error) {
-        console.error("Auth error:", error);
-        router.push("/");
+        console.error("Dashboard error:", error);
+        console.error("Error details:", error.message, error.data);
+        toast.showError(error.data?.message || "Gagal memuat dashboard");
+        setLoading(false);
       }
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, toast]);
 
   if (loading) {
     return (

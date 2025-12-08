@@ -53,16 +53,22 @@ const PaymentController = {
     try {
       const { id } = req.body;
       const payment = await paymentService.prosesPembayaran(id);
-      res.json(payment);
+      res.json({ 
+        message: 'Pembayaran sedang diproses', 
+        data: payment 
+      });
     } catch (e) {
       res.status(400).json({ message: e.message });
     }
   },
   async tolakPembayaran(req, res) {
     try {
-      const { id } = req.body;
-      const payment = await paymentService.tolakPembayaran(id);
-      res.json(payment);
+      const { id, reason } = req.body;
+      const payment = await paymentService.tolakPembayaran(id, reason);
+      res.json({ 
+        message: 'Pembayaran berhasil ditolak', 
+        data: payment 
+      });
     } catch (e) {
       res.status(400).json({ message: e.message });
     }

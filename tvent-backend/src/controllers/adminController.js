@@ -1,6 +1,18 @@
 const adminService = require('../services/adminService');
 
 const AdminController = {
+  async getStats(req, res) {
+    try {
+      const stats = await adminService.getStats();
+      res.json({ 
+        message: 'Stats berhasil diambil', 
+        data: stats 
+      });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  },
+
   async approveEvent(req, res) {
     try {
       const eventId = req.params.id;

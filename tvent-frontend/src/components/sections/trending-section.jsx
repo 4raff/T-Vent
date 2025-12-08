@@ -47,10 +47,10 @@ export default function TrendingSection() {
             <FireIcon />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Hottest Events This Week
+            Event Terpopuler Minggu Ini
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Discover the most popular events gaining attention from the
+            Temukan event paling populer yang mendapat perhatian dari
             community
           </p>
         </div>
@@ -70,8 +70,8 @@ export default function TrendingSection() {
                 {TRENDING_EVENTS[activeIndex].title}
               </h3>
               <p className="text-white/90 mb-6">
-                Join {TRENDING_EVENTS[activeIndex].attendees} attendees at this
-                amazing event. Limited spots available!
+                Join {TRENDING_EVENTS[activeIndex].attendees} peserta di acara ini
+                acara luar biasa. Tempat terbatas!
               </p>
               <button className="px-6 py-3 bg-white text-gray-900 font-bold rounded-lg hover:shadow-lg transition">
                 View Event
