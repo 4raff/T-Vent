@@ -8,6 +8,13 @@ export default function EventCard({ event }) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  const capitalizeStatus = (status) => {
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   const handleViewDetails = () => {
     router.push(`/events/${event.id}`);
   };
@@ -38,7 +45,7 @@ export default function EventCard({ event }) {
             'bg-red-500'
           } backdrop-blur-sm`}
         >
-          {event.status || 'pending'}
+          {capitalizeStatus(event.status || 'pending')}
         </div>
 
         {/* Capacity Badge */}
