@@ -40,7 +40,7 @@ export default function Dashboard() {
 
         // Filter milik user
         const userTickets = allTickets.filter(t => t.user_id === userData.id);
-        const userEvents = allEvents.filter(e => e.user_id === userData.id);
+        const userEvents = allEvents.filter(e => e.created_by === userData.id);
         const userBookmarks = allBookmarks.filter(b => b.user_id === userData.id);
 
         setStats({

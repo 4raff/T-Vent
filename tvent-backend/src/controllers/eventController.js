@@ -127,6 +127,33 @@ const EventController = {
         error: error.message 
       });
     }
+  },
+
+  async getFeaturedEvent(req, res) {
+    try {
+      const event = await eventService.getFeaturedEvent();
+      res.json(event);
+    } catch (error) {
+      console.error('Error in EventController.getFeaturedEvent():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat featured event',
+        error: error.message 
+      });
+    }
+  },
+
+  async getMostPurchasedEvents(req, res) {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+      const events = await eventService.getMostPurchasedEvents(limit);
+      res.json(events);
+    } catch (error) {
+      console.error('Error in EventController.getMostPurchasedEvents():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat most purchased events',
+        error: error.message 
+      });
+    }
   }
 };
 

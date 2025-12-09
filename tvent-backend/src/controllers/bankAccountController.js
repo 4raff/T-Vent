@@ -3,7 +3,8 @@ const bankAccountService = require('../services/bankAccountService');
 const BankAccountController = {
   async getAll(req, res) {
     try {
-      const bankAccounts = await bankAccountService.getAllBankAccounts(true);
+      const includeInactive = req.query.includeInactive === 'true';
+      const bankAccounts = await bankAccountService.getAllBankAccounts(!includeInactive);
       res.json({
         message: 'Bank accounts retrieved successfully',
         data: bankAccounts

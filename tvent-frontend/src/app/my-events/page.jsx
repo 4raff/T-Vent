@@ -3,14 +3,25 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/utils/services/authService";
+import { eventService } from "@/utils/services/eventService";
+import { useToast } from "@/components/common/ToastProvider";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import PageHeader from "@/components/common/PageHeader";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton";
 
 export default function MyEvents() {
   const router = useRouter();
+  const toast = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    eventId: null,
+  });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -22,8 +33,21 @@ export default function MyEvents() {
         const userData = authService.getUser();
         setUser(userData);
         
-        // TODO: Fetch user's created events from API
-        setEvents([]);
+        // Fetch all events and filter by user's created_by
+        try {
+          const allEvents = await eventService.getEvents();
+          const userEvents = Array.isArray(allEvents) 
+            ? allEvents.filter(e => e.created_by === userData.id)
+            : allEvents.data 
+              ? allEvents.data.filter(e => e.created_by === userData.id)
+              : [];
+          setEvents(userEvents);
+        } catch (error) {
+          console.error("Error fetching events:", error);
+          toast.showError("Gagal memuat event Anda");
+          setEvents([]);
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error("Error:", error);
@@ -34,20 +58,47 @@ export default function MyEvents() {
     checkAuth();
   }, [router]);
 
+  const handleEdit = (eventId) => {
+    router.push(`/edit-event/${eventId}`);
+  };
+
+  const handleDeleteClick = (eventId) => {
+    setDeleteModal({
+      isOpen: true,
+      eventId: eventId,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const eventId = deleteModal.eventId;
+    setDeletingId(eventId);
+    
+    try {
+      await eventService.deleteEvent(eventId);
+      toast.showSuccess("Event berhasil dihapus");
+      setEvents(events.filter(e => e.id !== eventId));
+      setDeleteModal({ isOpen: false, eventId: null });
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast.showError(error.data?.message || "Gagal menghapus event");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModal({ isOpen: false, eventId: null });
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 py-16">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-gray-300 rounded w-1/3"></div>
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-300 rounded"></div>
-              ))}
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <PageHeader title="My Events" subtitle="Loading your events..." />
+          <LoadingSkeleton count={3} variant="list" />
         </div>
+        <Footer />
       </div>
     );
   }
@@ -59,8 +110,10 @@ export default function MyEvents() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Events</h1>
-            <p className="text-gray-600">Manage and organize your events</p>
+            <PageHeader 
+              title="My Events" 
+              subtitle="Manage and organize your events" 
+            />
           </div>
           <button
             onClick={() => router.push("/create-event")}
@@ -82,6 +135,9 @@ export default function MyEvents() {
                     src={event.poster || "https://via.placeholder.com/300x200"}
                     alt={event.nama}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/300x200";
+                    }}
                   />
                 </div>
                 <div className="p-4">
@@ -104,11 +160,18 @@ export default function MyEvents() {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button className="flex-1 px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition text-sm font-semibold">
+                    <button 
+                      onClick={() => handleEdit(event.id)}
+                      className="flex-1 px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition text-sm font-semibold"
+                    >
                       Edit
                     </button>
-                    <button className="flex-1 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-semibold">
-                      Delete
+                    <button 
+                      onClick={() => handleDeleteClick(event.id)}
+                      disabled={deletingId === event.id}
+                      className="flex-1 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingId === event.id ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </div>
@@ -127,6 +190,18 @@ export default function MyEvents() {
           </div>
         )}
       </main>
+
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        title="Hapus Event"
+        message="Apakah Anda yakin ingin menghapus event ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
+        cancelText="Batal"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        isLoading={deletingId === deleteModal.eventId}
+        confirmVariant="danger"
+      />
 
       <Footer />
     </div>

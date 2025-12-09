@@ -7,9 +7,12 @@ import { authService } from "@/utils/services/authService";
 import { eventService } from "@/utils/services/eventService";
 import { reviewService } from "@/utils/services/reviewService";
 import { bookmarkService } from "@/utils/services/bookmarkService";
+import { capitalizeFirstLetter, getStatusColor } from "@/utils/helpers";
+import { useCheckout } from "@/contexts/CheckoutContext";
 import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import LoginModal from "@/components/modals/login-modal";
 
 export default function EventDetail() {
   const router = useRouter();
@@ -31,6 +34,7 @@ export default function EventDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -113,18 +117,27 @@ export default function EventDetail() {
     }
   };
 
+  const { setCheckout } = useCheckout();
+
   const handleBooking = async () => {
     if (!user) {
-      router.push("/");
+      toast.showWarning("Silakan login terlebih dahulu untuk booking");
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Validasi event harus approved
+    if (event.status !== "approved") {
+      toast.showError("Event ini belum dapat di-booking. Status: " + capitalizeFirstLetter(event.status));
       return;
     }
 
     setIsKirimting(true);
     try {
-      // Redirect to checkout page with event and quantity
-      router.push(
-        `/checkout?eventId=${eventId}&quantity=${quantity}`
-      );
+      // Set checkout data in context (more secure than URL params)
+      setCheckout(eventId, quantity);
+      // Redirect to checkout page without exposing event ID or quantity in URL
+      router.push(`/checkout`);
     } catch (error) {
       console.error("Booking error:", error);
       toast.showError(error.data?.message || "Gagal lanjut ke checkout");
@@ -153,6 +166,14 @@ export default function EventDetail() {
       console.error("Error toggling bookmark:", error);
       toast.showError("Gagal mengubah bookmark");
     }
+  };
+
+  const handleLoginSuccess = (token, userData) => {
+    localStorage.setItem('jwtToken', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    setShowLoginModal(false);
+    toast.showSuccess(`Selamat datang, ${userData.username}!`);
   };
 
   if (loading) {
@@ -208,6 +229,9 @@ export default function EventDetail() {
                 src={event.poster || "https://via.placeholder.com/800x400"}
                 alt={event.nama}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/800x400";
+                }}
               />
             </div>
 
@@ -218,8 +242,8 @@ export default function EventDetail() {
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">
                     {event.nama}
                   </h1>
-                  <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
-                    {event.status || "Pending"}
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(event.status).bgColor} ${getStatusColor(event.status).textColor}`}>
+                    {capitalizeFirstLetter(event.status)}
                   </span>
                 </div>
                 <button
@@ -296,7 +320,7 @@ export default function EventDetail() {
 
               {/* Review Form */}
               {showReviewForm && user && (
-                <form onKirim={handleKirimReview} className="bg-gray-50 rounded-lg p-6 mb-6">
+                <form onSubmit={handleKirimReview} className="bg-gray-50 rounded-lg p-6 mb-6">
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Rating
@@ -478,6 +502,13 @@ export default function EventDetail() {
       </main>
 
       <Footer />
+
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => setShowLoginModal(false)}
+          onLogin={handleLoginSuccess}
+        />
+      )}
     </div>
   );
 }

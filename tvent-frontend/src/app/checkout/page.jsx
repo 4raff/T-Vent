@@ -1,20 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { authService } from "@/utils/services/authService";
 import { apiClient } from "@/utils/api/client";
+import { capitalizeFirstLetter } from "@/utils/helpers";
 import { useToast } from "@/components/common/ToastProvider";
+import { useCheckout } from "@/contexts/CheckoutContext";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { formatRupiah } from "@/utils/formatCurrency";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const toast = useToast();
-  const eventId = searchParams.get("eventId");
-  const quantity = parseInt(searchParams.get("quantity")) || 1;
+  const { checkoutData } = useCheckout();
+
+  // Get event ID and quantity from context, not URL
+  const eventId = checkoutData?.eventId;
+  const quantity = checkoutData?.quantity || 1;
 
   const [user, setUser] = useState(null);
   const [event, setEvent] = useState(null);
@@ -27,6 +31,16 @@ export default function CheckoutPage() {
   const [ewalletProviders, setEwalletProviders] = useState([]);
   const [selectedBankId, setSelectedBankId] = useState(null);
   const [selectedEwalletId, setSelectedEwalletId] = useState(null);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // Validate checkout data on mount
+  useEffect(() => {
+    if (!eventId) {
+      toast.showError("Data checkout tidak valid. Silakan pilih event terlebih dahulu.");
+      router.push("/events");
+    }
+  }, [eventId, router, toast]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,6 +71,15 @@ export default function CheckoutPage() {
         // Call actual API to get event
         const eventData = await apiClient.get(`/events/${eventId}`);
         const event = eventData.data || eventData;
+        
+        // 🔒 Validasi: Event harus approved
+        if (!event || event.status !== 'approved') {
+          const status = event?.status || 'tidak ditemukan';
+          toast.showError(`Event tidak dapat di-booking. Status: ${capitalizeFirstLetter(status)}`);
+          router.push("/events");
+          return;
+        }
+
         setEvent(event);
         
         // Fetch bank accounts and ewallet providers
@@ -87,16 +110,18 @@ export default function CheckoutPage() {
     }
   }, [eventId, router]);
 
-  const compressImage = (canvas, quality = 0.7) => {
-    return canvas.toDataURL('image/jpeg', quality);
-  };
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file size (limit to 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        toast.showWarning("Ukuran file terlalu besar. Maksimal 2MB.");
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.showWarning("Ukuran file terlalu besar. Maksimal 5MB.");
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.showWarning("File harus berupa gambar");
         return;
       }
 
@@ -110,10 +135,10 @@ export default function CheckoutPage() {
           let width = img.width;
           let height = img.height;
 
-          // Resize if larger than 1200px
-          if (width > 1200) {
-            height = (height * 1200) / width;
-            width = 1200;
+          // Resize if larger than 1000px
+          if (width > 1000) {
+            height = (height * 1000) / width;
+            width = 1000;
           }
 
           canvas.width = width;
@@ -121,9 +146,21 @@ export default function CheckoutPage() {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Compress to JPEG with 70% quality
-          const compressed = compressImage(canvas, 0.7);
+          // Always compress to JPEG for smaller file size and wider compatibility
+          // PNG will be converted to JPEG to ensure it's not corrupted
+          let quality = 0.85;
+          let compressed = canvas.toDataURL('image/jpeg', quality);
+          
+          // If still too large, reduce quality further - keep under 300KB for database safety
+          while (compressed.length > 300 * 1024 && quality > 0.4) { // 300KB max
+            quality -= 0.1;
+            compressed = canvas.toDataURL('image/jpeg', quality);
+          }
+          
           setProofPreview(compressed);
+        };
+        img.onerror = () => {
+          toast.showError("Gagal memproses gambar. Coba dengan file lain.");
         };
         img.src = reader.result;
       };
@@ -136,6 +173,11 @@ export default function CheckoutPage() {
 
     if (!proofFile && paymentMethod !== "card") {
       toast.showWarning("Silakan upload bukti pembayaran");
+      return;
+    }
+
+    if (!agreedToTerms) {
+      toast.showWarning("Anda harus setuju dengan syarat dan ketentuan");
       return;
     }
 
@@ -320,10 +362,11 @@ export default function CheckoutPage() {
                           <img
                             src={proofPreview}
                             alt="Payment proof"
-                            className="max-h-64 mx-auto rounded"
+                            className="max-h-64 mx-auto rounded cursor-pointer hover:opacity-80 transition"
+                            onClick={() => setFullscreenImage(proofPreview)}
                           />
                           <p className="text-center text-sm text-gray-600 mt-3">
-                            Click to change
+                            Click to view fullscreen
                           </p>
                         </div>
                       ) : (
@@ -359,8 +402,9 @@ export default function CheckoutPage() {
                 <input
                   type="checkbox"
                   id="terms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
                   className="w-5 h-5 mt-1 rounded text-purple-600"
-                  defaultChecked
                 />
                 <label htmlFor="terms" className="ml-3 text-gray-700">
                   Saya setuju dengan syarat dan ketentuan serta kebijakan privasi T-Vent
@@ -370,8 +414,8 @@ export default function CheckoutPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isProcessing}
-                className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold disabled:bg-gray-400"
+                disabled={isProcessing || !agreedToTerms}
+                className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {isProcessing ? "Processing..." : "Complete Payment"}
               </button>
@@ -447,9 +491,9 @@ export default function CheckoutPage() {
                         onClick={() => setSelectedEwalletId(provider.id)}
                       >
                         <p className="font-semibold">{provider.name}</p>
-                        {provider.instructions && (
+                        {provider.account_number && (
                           <p className="text-xs mt-1 text-gray-600">
-                            {provider.instructions}
+                            {provider.account_number}
                           </p>
                         )}
                       </div>
@@ -480,6 +524,31 @@ export default function CheckoutPage() {
           </div>
         </div>
       </main>
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <div className="relative w-full h-full max-w-6xl flex items-center justify-center">
+            <img
+              src={fullscreenImage}
+              alt="Fullscreen preview"
+              className="w-full h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setFullscreenImage(null)}
+              className="absolute top-6 right-6 bg-white rounded-full p-3 hover:bg-gray-200 transition shadow-lg"
+            >
+              <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

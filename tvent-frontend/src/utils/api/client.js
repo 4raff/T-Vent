@@ -21,10 +21,16 @@ class ApiClient {
 
     // Tambah JWT token from localStorage if available
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('jwtToken');
+      let token = localStorage.getItem('jwtToken');
       if (token) {
-        // Token already has 'Bearer ' prefix from backend, so don't add it again
+        // Ensure token has 'Bearer ' prefix
+        if (!token.startsWith('Bearer ')) {
+          token = `Bearer ${token}`;
+        }
         headers['Authorization'] = token;
+        console.debug('Token sent in request:', token.substring(0, 20) + '...');
+      } else {
+        console.warn('No token found in localStorage for endpoint:', endpoint);
       }
     }
 
@@ -49,6 +55,20 @@ class ApiClient {
       if (!response.ok) {
         const errorMsg = responseData?.message || responseData?.error || response.statusText;
         console.error(`API Error [${response.status}]:`, endpoint, errorMsg, responseData);
+        
+        // Handle 401 Unauthorized - clear invalid token
+        if (response.status === 401) {
+          console.warn('Received 401 Unauthorized. Clearing token and session.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('user');
+            // Redirect to login if not already there
+            if (!window.location.pathname.includes('/login') && !window.location.pathname === '/') {
+              window.location.href = '/';
+            }
+          }
+        }
+        
         throw new ApiError(
           errorMsg,
           response.status,

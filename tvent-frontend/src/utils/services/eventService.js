@@ -64,4 +64,30 @@ export const eventService = {
       throw error;
     }
   },
+
+  /**
+   * Get featured event (most purchased)
+   */
+  async getFeaturedEvent() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/featured/single`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getFeaturedEvent error:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Get most purchased events
+   */
+  async getMostPurchasedEvents(limit = 10) {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/featured/most-purchased?limit=${limit}`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getMostPurchasedEvents error:', error.message);
+      throw error;
+    }
+  },
 };

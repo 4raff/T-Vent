@@ -8,10 +8,12 @@ const CATEGORY_EMOJI = {
   Music: "♪",
   Workshop: "⚒",
   Art: "🎨",
-  Sport: "⚽",
+  Sports: "⚽",
   Education: "📚",
   Business: "💼",
   Health: "🏥",
+  Entertainment: "🎭",
+  Food: "🍔",
 };
 
 const CATEGORY_COLOR = {
@@ -19,10 +21,12 @@ const CATEGORY_COLOR = {
   Music: "from-pink-500 to-rose-600",
   Workshop: "from-orange-500 to-red-600",
   Art: "from-purple-500 to-indigo-600",
-  Sport: "from-green-500 to-emerald-600",
+  Sports: "from-green-500 to-emerald-600",
   Education: "from-yellow-500 to-amber-600",
   Business: "from-gray-500 to-slate-600",
   Health: "from-red-500 to-pink-600",
+  Entertainment: "from-teal-500 to-cyan-600",
+  Food: "from-lime-500 to-green-600",
 };
 
 export default function CategoriesBar({ events = [] }) {

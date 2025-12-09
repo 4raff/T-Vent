@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/common/ToastProvider";
+import { CheckoutProvider } from "@/contexts/CheckoutContext";
 
 const geist = Geist({ subsets: ["latin"] });
 const geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -17,7 +18,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geist.className} font-sans antialiased`}>
         <ToastProvider>
-          {children}
+          <CheckoutProvider>
+            {children}
+          </CheckoutProvider>
         </ToastProvider>
       </body>
     </html>

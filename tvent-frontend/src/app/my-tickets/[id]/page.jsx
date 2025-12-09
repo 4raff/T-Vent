@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { QRCodeCanvas } from 'qrcode.react';
 import { authService } from "@/utils/services/authService";
+import { ticketService } from "@/utils/services/ticketService";
 import { apiClient } from "@/utils/api/client";
 import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import CancelTicketModal from "@/components/modals/cancel-ticket-modal";
 
 export default function TicketDetail() {
   const router = useRouter();
   const params = useParams();
   const toast = useToast();
+  const qrRef = useRef();
   const [ticket, setTicket] = useState(null);
   const [event, setEvent] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [selectedTicketForCancel, setSelectedTicketForCancel] = useState(null);
+  const [isProcessingCancel, setIsProcessingCancel] = useState(false);
 
   const capitalizeStatus = (status) => {
     return status
@@ -43,6 +49,31 @@ export default function TicketDetail() {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleCancelClick = () => {
+    setSelectedTicketForCancel(ticket);
+  };
+
+  const handleConfirmCancel = async (ticketId, reason) => {
+    setIsProcessingCancel(true);
+    try {
+      await ticketService.cancelTicket(ticketId, reason);
+      toast.showSuccess("Tiket berhasil dibatalkan");
+      setSelectedTicketForCancel(null);
+      
+      // Reload ticket data
+      if (params.id) {
+        const updatedTicket = await ticketService.getTicket(params.id);
+        setTicket(updatedTicket);
+      }
+    } catch (error) {
+      console.error("Error cancelling ticket:", error);
+      const errorMsg = error.data?.message || "Gagal membatalkan tiket";
+      toast.showError(errorMsg);
+    } finally {
+      setIsProcessingCancel(false);
     }
   };
 
@@ -209,22 +240,51 @@ export default function TicketDetail() {
                     <p className="text-red-600 font-semibold mt-1">{payment.rejection_reason}</p>
                   </div>
                 )}
+
+                {ticket.status === 'cancelled' && ticket.cancellation_reason && (
+                  <div>
+                    <p className="text-gray-600 text-sm font-medium">Alasan Pembatalan</p>
+                    <p className="text-orange-600 font-semibold mt-1">{ticket.cancellation_reason}</p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* QR Code and Event Details */}
             <div>
-              {ticket.qr_code && (
+              {ticket && (
                 <div className="mb-8">
-                  <p className="text-gray-600 text-sm font-medium mb-4">QR Code</p>
-                  <div className="bg-gray-100 p-4 rounded-lg">
-                    <div className="aspect-square bg-white rounded flex items-center justify-center">
-                      {/* Placeholder for QR code - in production would show actual QR */}
-                      <div className="text-center">
-                        <p className="text-gray-500 text-sm">QR: {ticket.qr_code}</p>
-                      </div>
+                  <p className="text-gray-600 text-sm font-medium mb-4">QR Code Tiket</p>
+                  <div className="bg-gray-100 p-6 rounded-lg flex justify-center">
+                    <div className="bg-white p-4 rounded" ref={qrRef}>
+                      <QRCodeCanvas 
+                        value={ticket.kode_tiket || `TICKET-${ticket.id}`}
+                        size={256}
+                        level="H"
+                        includeMargin={true}
+                      />
                     </div>
                   </div>
+                  <p className="text-xs text-gray-500 text-center mt-3 mb-4">
+                    Tunjukkan QR code ini saat check-in event
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (qrRef.current) {
+                        // Get canvas from QRCodeCanvas ref
+                        const canvas = qrRef.current.querySelector('canvas');
+                        if (canvas) {
+                          const link = document.createElement('a');
+                          link.href = canvas.toDataURL('image/png');
+                          link.download = `tiket-${ticket.kode_tiket}.png`;
+                          link.click();
+                        }
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold text-sm"
+                  >
+                    Download QR Code
+                  </button>
                 </div>
               )}
 
@@ -267,8 +327,10 @@ export default function TicketDetail() {
 
           {/* Actions */}
           <div className="flex gap-3 pt-6 border-t">
-            {ticket.status === "pending" && (
-              <button className="px-6 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-semibold">
+            {(ticket.status === "pending" || ticket.status === "confirmed") && (
+              <button 
+                onClick={handleCancelClick}
+                className="px-6 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-semibold">
                 Batalkan Tiket
               </button>
             )}
@@ -281,6 +343,16 @@ export default function TicketDetail() {
           </div>
         </div>
       </main>
+
+      {/* Cancel Ticket Modal */}
+      {selectedTicketForCancel && (
+        <CancelTicketModal
+          ticket={selectedTicketForCancel}
+          onCancel={() => setSelectedTicketForCancel(null)}
+          onConfirm={handleConfirmCancel}
+          isLoading={isProcessingCancel}
+        />
+      )}
 
       <Footer />
     </div>

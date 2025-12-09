@@ -14,7 +14,9 @@ module.exports = {
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'tvent_db',
-      charset: 'utf8mb4'
+      charset: 'utf8mb4',
+      supportBigNumbers: true,
+      bigNumberStrings: true
     },
     migrations: {
       directory: './migrations',
@@ -38,7 +40,9 @@ module.exports = {
       user: process.env.TEST_DB_USER || 'root',
       password: process.env.TEST_DB_PASSWORD || '',
       database: process.env.TEST_DB_NAME || 'tvent_test_db',
-      charset: 'utf8mb4'
+      charset: 'utf8mb4',
+      supportBigNumbers: true,
+      bigNumberStrings: true
     },
     migrations: {
       directory: './migrations',
@@ -59,6 +63,8 @@ module.exports = {
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       charset: 'utf8mb4',
+      supportBigNumbers: true,
+      bigNumberStrings: true,
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
     },
     migrations: {

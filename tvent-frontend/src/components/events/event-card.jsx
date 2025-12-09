@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function EventCard({ event }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleViewDetails = () => {
     router.push(`/events/${event.id}`);
@@ -20,14 +20,13 @@ export default function EventCard({ event }) {
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-gray-200">
-        <Image
-          src={event.poster || "/images/placeholder.svg"}
-          alt={event.nama || "Event image" }
-          width={400}
-          height={300}
+        <img
+          src={imageError ? "/images/placeholder.svg" : (event.poster || "/images/placeholder.svg")}
+          alt={event.nama || "Event image"}
           className={`w-full h-full object-cover transition duration-500 ${
             isHovered ? "scale-110" : "scale-100"
           }`}
+          onError={() => setImageError(true)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
