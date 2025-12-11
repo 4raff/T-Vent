@@ -98,6 +98,13 @@ export default function EventsPage() {
       );
     }
 
+    // Sort by date (newest first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.tanggal);
+      const dateB = new Date(b.tanggal);
+      return dateB - dateA;
+    });
+
     setFilteredEvents(filtered);
     setCurrentPage(1); // Reset ke halaman 1 saat filter berubah
   }, [searchTerm, selectedCategory, events]);

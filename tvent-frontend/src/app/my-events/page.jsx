@@ -62,10 +62,24 @@ export default function MyEvents() {
     router.push(`/edit-event/${eventId}`);
   };
 
-  const handleDeleteClick = (eventId) => {
+  const handleDeleteClick = (event) => {
+    // Check if event is approved
+    if (event.status === "approved") {
+      toast.showError("Event yang sudah di-approve tidak bisa dihapus");
+      return;
+    }
+
+    // Check if event has sold tickets
+    const ticketsSold = event.jumlah_tiket - (event.tiket_tersedia || 0);
+    if (ticketsSold > 0) {
+      toast.showError("Event yang sudah memiliki penjualan tiket tidak bisa dihapus");
+      return;
+    }
+
+    // If checks pass, show confirmation modal
     setDeleteModal({
       isOpen: true,
-      eventId: eventId,
+      eventId: event.id,
     });
   };
 
@@ -167,9 +181,14 @@ export default function MyEvents() {
                       Edit
                     </button>
                     <button 
-                      onClick={() => handleDeleteClick(event.id)}
-                      disabled={deletingId === event.id}
-                      className="flex-1 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleDeleteClick(event)}
+                      disabled={event.status === "approved" || (event.jumlah_tiket - (event.tiket_tersedia || 0) > 0) || deletingId === event.id}
+                      className={`flex-1 px-4 py-2 border rounded-lg transition text-sm font-semibold ${
+                        event.status === "approved" || (event.jumlah_tiket - (event.tiket_tersedia || 0) > 0)
+                          ? "border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50"
+                          : "border-red-600 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      }`}
+                      title={event.status === "approved" ? "Event yang di-approve tidak bisa dihapus" : (event.jumlah_tiket - (event.tiket_tersedia || 0) > 0) ? "Event dengan tiket terjual tidak bisa dihapus" : ""}
                     >
                       {deletingId === event.id ? "Deleting..." : "Delete"}
                     </button>
