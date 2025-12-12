@@ -33,13 +33,13 @@ export default function MyEvents() {
         const userData = authService.getUser();
         setUser(userData);
         
-        // Fetch all events and filter by user's created_by
+        // Fetch all events created by user
         try {
-          const allEvents = await eventService.getEvents();
+          const allEvents = await eventService.getMyEvents();
           const userEvents = Array.isArray(allEvents) 
-            ? allEvents.filter(e => e.created_by === userData.id)
+            ? allEvents
             : allEvents.data 
-              ? allEvents.data.filter(e => e.created_by === userData.id)
+              ? allEvents.data
               : [];
           setEvents(userEvents);
         } catch (error) {

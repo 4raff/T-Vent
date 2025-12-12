@@ -31,7 +31,7 @@ export default function Dashboard() {
 
         // Fetch stats from APIs
         const ticketsResponse = await apiClient.get(`/tickets`);
-        const eventsResponse = await apiClient.get(`/events`);
+        const eventsResponse = await apiClient.get(`/events/my-events`);
         const bookmarksResponse = await apiClient.get(`/bookmarks`);
 
         const allTickets = Array.isArray(ticketsResponse) ? ticketsResponse : ticketsResponse.data || [];
@@ -40,7 +40,7 @@ export default function Dashboard() {
 
         // Filter milik user
         const userTickets = allTickets.filter(t => t.user_id === userData.id);
-        const userEvents = allEvents.filter(e => e.created_by === userData.id);
+        const userEvents = allEvents; // Already filtered by user on backend
         const userBookmarks = allBookmarks.filter(b => b.user_id === userData.id);
 
         setStats({

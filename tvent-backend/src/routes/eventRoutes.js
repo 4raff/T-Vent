@@ -12,6 +12,7 @@ const {
 
 router.get('/', EventController.getAll);
 router.get('/admin/all', checkAuth, EventController.getAllForAdmin);
+router.get('/my-events', checkAuth, EventController.getMyEvents);
 router.get('/categories', EventController.getCategories);
 router.get('/featured/most-purchased', EventController.getMostPurchasedEvents);
 router.get('/featured/single', EventController.getFeaturedEvent);

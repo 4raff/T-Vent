@@ -49,6 +49,11 @@ class EventService {
   async getMostPurchasedEvents(limit = 10) {
     return eventRepository.getMostPurchasedEvents(limit);
   }
+
+  // getEventsByCreator: get all events created by a specific user
+  async getEventsByCreator(userId) {
+    return eventRepository.findByCreator(userId);
+  }
 }
 
 module.exports = new EventService();

@@ -119,6 +119,23 @@ class EventRepository {
       throw error;
     }
   }
+
+  // Get all events created by a specific user (regardless of status)
+  async findByCreator(userId) {
+    try {
+      return await knex('events')
+        .leftJoin('users', 'events.created_by', 'users.id')
+        .select(
+          'events.*',
+          'users.username as creator_name'
+        )
+        .where('events.created_by', userId)
+        .orderBy('events.created_at', 'desc');
+    } catch (error) {
+      console.error('Error in EventRepository.findByCreator():', error.message);
+      throw error;
+    }
+  }
 }
 
 module.exports = new EventRepository();

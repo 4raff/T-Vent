@@ -103,4 +103,17 @@ export const eventService = {
       throw error;
     }
   },
+
+  /**
+   * Get all events created by logged-in user
+   */
+  async getMyEvents() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/my-events`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getMyEvents error:', error.message);
+      throw error;
+    }
+  },
 };

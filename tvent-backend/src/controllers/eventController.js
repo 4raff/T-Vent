@@ -28,6 +28,24 @@ const EventController = {
       });
     }
   },
+  async getMyEvents(req, res) {
+    try {
+      // Endpoint khusus user: fetch semua events yang dibuat user (regardless of status)
+      if (!req.userData || !req.userData.id) {
+        return res.status(401).json({ message: 'Otorisasi gagal: User ID tidak ditemukan.' });
+      }
+      
+      const userId = req.userData.id;
+      const events = await eventService.getEventsByCreator(userId);
+      res.json(events);
+    } catch (error) {
+      console.error('Error in EventController.getMyEvents():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat events Anda',
+        error: error.message 
+      });
+    }
+  },
   async getById(req, res) {
     const event = await eventService.getEventById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
