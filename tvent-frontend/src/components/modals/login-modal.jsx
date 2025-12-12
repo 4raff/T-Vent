@@ -6,7 +6,10 @@ import { authService } from "@/utils/services/authService";
 export default function LoginModal({
   onClose,
   onLogin,
+  onAuthSuccess,
   isSignupMode = false,
+  setIsSignupMode,
+  isOpen = true,
 }) {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -14,7 +17,6 @@ export default function LoginModal({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSignup, setIsSignup] = useState(isSignupMode);
-
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -69,8 +71,16 @@ export default function LoginModal({
           const userData = response.data || response;
           console.log("Login successful. User data:", userData);
           
-          // Call onLogin callback - parent component akan handle state/redirect
-          onLogin(response.token, userData);
+          // Call onAuthSuccess callback jika ada (untuk navbar)
+          if (onAuthSuccess) {
+            onAuthSuccess(response.token, userData);
+          }
+          
+          // Call onLogin callback untuk backward compatibility
+          if (onLogin) {
+            onLogin(response.token, userData);
+          }
+          
           setSuccessMessage("Login berhasil!");
           
           // Close modal setelah login berhasil - kasih waktu 1.5 detik untuk lihat notifikasi
@@ -115,7 +125,9 @@ export default function LoginModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+    <>
+      {isOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
 
         {/* Header */}
@@ -322,6 +334,7 @@ export default function LoginModal({
                 type="button"
                 onClick={() => {
                   setIsSignup(false);
+                  if (setIsSignupMode) setIsSignupMode(false);
                   setErrorMessage(null);
                   setSuccessMessage(null);
                 }}
@@ -338,6 +351,7 @@ export default function LoginModal({
                 type="button"
                 onClick={() => {
                   setIsSignup(true);
+                  if (setIsSignupMode) setIsSignupMode(true);
                   setErrorMessage(null);
                   setSuccessMessage(null);
                 }}
@@ -350,6 +364,8 @@ export default function LoginModal({
           )}
         </div>
       </div>
-    </div>
+      </div>
+      )}
+    </>
   );
 }

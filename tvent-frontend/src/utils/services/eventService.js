@@ -90,4 +90,17 @@ export const eventService = {
       throw error;
     }
   },
+
+  /**
+   * Get all unique event categories
+   */
+  async getCategories() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/categories`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getCategories error:', error.message);
+      throw error;
+    }
+  },
 };

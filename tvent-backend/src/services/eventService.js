@@ -18,8 +18,8 @@ class EventService {
     return eventRepository.delete(id);
   }
 
-  async listEvents() {
-    return eventRepository.list();
+  async listEvents(userRole = null) {
+    return eventRepository.list(userRole);
   }
 
   // tampilkanDetail: get event detail with related info

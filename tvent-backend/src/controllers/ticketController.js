@@ -45,6 +45,16 @@ const TicketController = {
         });
       }
 
+      // 🔒 Validasi: Event belum expired (tanggal masih di masa depan)
+      const eventDate = new Date(event.tanggal);
+      const now = new Date();
+      if (eventDate < now) {
+        return res.status(403).json({ 
+          message: 'Event sudah terlewat dan tidak dapat di-booking lagi',
+          eventDate: event.tanggal
+        });
+      }
+
       const ticket = await ticketService.createTicket(req.body);
       res.status(201).json({ 
         message: 'Tiket berhasil dibuat', 

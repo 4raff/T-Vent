@@ -7,6 +7,11 @@ import { formatRupiah } from "@/utils/formatCurrency";
 
 const itemsPerPage = 10;
 
+// Helper function to check if event is expired
+const isEventExpired = (eventDate) => {
+  return new Date(eventDate) < new Date();
+};
+
 export default function AdminEventsSection({ 
   allEvents, 
   onApproveEvent, 
@@ -49,7 +54,7 @@ export default function AdminEventsSection({
                   >
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-bold text-gray-900">
                             {event.nama}
                           </h3>
@@ -61,6 +66,11 @@ export default function AdminEventsSection({
                           }`}>
                             {capitalizeStatus(event.status)}
                           </span>
+                          {isEventExpired(event.tanggal) && (
+                            <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-300 text-gray-800">
+                              🔒 Expired
+                            </span>
+                          )}
                         </div>
                         <p className="text-gray-600 text-sm mb-2">
                           {event.deskripsi}

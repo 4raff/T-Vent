@@ -10,36 +10,35 @@ export default function FeaturedEvents() {
   const [filter, setFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [events, setEvents] = useState([]);
+  const [categories, setCategories] = useState(["All"]);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 5;
 
-  const categories = [
-    "All",
-    "Workshop",
-    "Exhibition",
-    "Performance",
-    "Seminar",
-    "Social",
-  ];
-
-  // Fetch events from API
+  // Fetch categories and events from API
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await eventService.getMostPurchasedEvents(10);
-        const dataArray = response.data || response;
-        // Already filtered by approved status in the endpoint
-        setEvents(Array.isArray(dataArray) ? dataArray : []);
+        
+        // Fetch events
+        const eventsResponse = await eventService.getMostPurchasedEvents(10);
+        const eventsData = eventsResponse.data || eventsResponse;
+        setEvents(Array.isArray(eventsData) ? eventsData : []);
+        
+        // Fetch categories
+        const categoriesResponse = await eventService.getCategories();
+        const categoriesData = Array.isArray(categoriesResponse) ? categoriesResponse : categoriesResponse.data || [];
+        setCategories(["All", ...categoriesData]);
       } catch (error) {
-        console.error("Failed to fetch events:", error);
+        console.error("Failed to fetch data:", error);
         setEvents([]);
+        setCategories(["All"]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEvents();
+    fetchData();
   }, []);
 
   const filteredEvents =
