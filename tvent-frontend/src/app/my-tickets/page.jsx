@@ -22,6 +22,8 @@ export default function MyTickets() {
   const [cancellingTicketId, setCancellingTicketId] = useState(null);
   const [selectedTicketForCancel, setSelectedTicketForCancel] = useState(null);
   const [isProcessingCancel, setIsProcessingCancel] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const handleCancelClick = (ticket) => {
     setSelectedTicketForCancel(ticket);
@@ -139,7 +141,14 @@ export default function MyTickets() {
 
         {tickets.length > 0 ? (
           <div className="space-y-4">
-            {tickets.map((ticket) => (
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, tickets.length)} to {Math.min(currentPage * itemsPerPage, tickets.length)} of {tickets.length} tickets
+            </div>
+
+            {tickets
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .map((ticket) => (
               <div
                 key={ticket.id}
                 className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
@@ -193,6 +202,54 @@ export default function MyTickets() {
                 </div>
               </div>
             ))}
+
+            {/* Pagination Controls */}
+            {Math.ceil(tickets.length / itemsPerPage) > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                  }`}
+                >
+                  ← Previous
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from(
+                    { length: Math.ceil(tickets.length / itemsPerPage) },
+                    (_, i) => i + 1
+                  ).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        currentPage === page
+                          ? "bg-purple-600 text-white shadow-lg scale-110"
+                          : "bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-600 hover:text-purple-600"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(Math.ceil(tickets.length / itemsPerPage), currentPage + 1))}
+                  disabled={currentPage === Math.ceil(tickets.length / itemsPerPage)}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === Math.ceil(tickets.length / itemsPerPage)
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                  }`}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow p-12 text-center">

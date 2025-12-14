@@ -21,9 +21,10 @@ export default function AdminUsersSection({ users }) {
       title="Users"
       emptyMessage="No users found"
       renderItem={(filteredUsers) => {
-        const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+        const sortedUsers = [...filteredUsers].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
         const startIndex = (currentPage - 1) * itemsPerPage;
-        const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+        const paginatedUsers = sortedUsers.slice(startIndex, startIndex + itemsPerPage);
 
         return (
           <>

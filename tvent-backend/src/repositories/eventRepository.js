@@ -3,7 +3,14 @@ const knex = require('../config/database');
 
 class EventRepository {
   async findById(id) {
-    return knex('events').where({ id }).first();
+    return knex('events')
+      .leftJoin('users', 'events.created_by', 'users.id')
+      .select(
+        'events.*',
+        'users.username as creator_name'
+      )
+      .where('events.id', id)
+      .first();
   }
 
   async create(event) {

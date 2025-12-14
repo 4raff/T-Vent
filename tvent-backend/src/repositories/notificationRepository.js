@@ -39,6 +39,10 @@ class NotificationRepository {
   async findByType(type) {
     return knex('notifications').where({ type }).select('*');
   }
+
+  async deleteById(id) {
+    return knex('notifications').where({ id }).delete();
+  }
 }
 
 module.exports = new NotificationRepository();

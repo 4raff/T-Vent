@@ -53,7 +53,7 @@ exports.seed = async function(knex) {
     {
       id: 4,
       nama: 'Workshop Photography',
-      deskripsi: 'Workshop fotografi untuk pemula sampai advanced, langsung praktek di lapangan dengan mentor profesional',
+      deskripsi: '                                                                                        ',
       tanggal: new Date('2025-11-10 08:00:00'),
       lokasi: 'Studio Foto Bandung Creative Hub',
       harga: 350000,

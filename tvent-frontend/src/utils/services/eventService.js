@@ -116,4 +116,17 @@ export const eventService = {
       throw error;
     }
   },
+
+  /**
+   * Get all tickets for a specific event
+   */
+  async getTicketsByEvent(eventId) {
+    try {
+      const response = await apiClient.get(`/tickets?event_id=${eventId}`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getTicketsByEvent error:', error.message);
+      throw error;
+    }
+  },
 };

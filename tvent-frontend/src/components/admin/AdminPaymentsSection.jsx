@@ -32,14 +32,19 @@ export default function AdminPaymentsSection({
         title="Payments"
         emptyMessage="No payments found"
         renderItem={(filteredPayments) => {
-          const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+          // Sort payments by created_at (newest first)
+          const sortedPayments = [...filteredPayments].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+          );
+          
+          const totalPages = Math.ceil(sortedPayments.length / itemsPerPage);
           const startIndex = (currentPage - 1) * itemsPerPage;
-          const paginatedPayments = filteredPayments.slice(startIndex, startIndex + itemsPerPage);
+          const paginatedPayments = sortedPayments.slice(startIndex, startIndex + itemsPerPage);
 
           return (
             <>
               <div className="mb-4 text-sm text-gray-600">
-                Showing {Math.min(startIndex + 1, filteredPayments.length)} to {Math.min(startIndex + itemsPerPage, filteredPayments.length)} of {filteredPayments.length} payments
+                Showing {Math.min(startIndex + 1, sortedPayments.length)} to {Math.min(startIndex + itemsPerPage, sortedPayments.length)} of {sortedPayments.length} payments
               </div>
 
               <div className="overflow-x-auto mb-6">
@@ -66,7 +71,7 @@ export default function AdminPaymentsSection({
                   <tbody>
                     {paginatedPayments.map((payment) => (
                       <tr key={payment.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4">#{payment.id}</td>
+                        <td className="py-3 px-4">{payment.kode_pembayaran || `#${payment.id}`}</td>
                         <td className="py-3 px-4">{payment.user_name}</td>
                         <td className="py-3 px-4 font-semibold">
                           {formatRupiah(payment.jumlah)}

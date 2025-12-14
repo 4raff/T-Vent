@@ -47,6 +47,19 @@ class userService {
     });
   }
 
+  // Get user by id
+  async getUserById(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Remove password
+    delete user.password;
+
+    return user;
+  }
+
   // Generate JWT token
   generateToken(user) {
     const payload = {
@@ -61,6 +74,37 @@ class userService {
       process.env.JWT_SECRET || 'your-secret-key-change-this',
       { expiresIn: '7d' } // Token valid for 7 days
     );
+  }
+
+  // Change password
+  async changePassword(userId, oldPassword, newPassword) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new Error('User tidak ditemukan');
+    }
+
+    // Verify old password
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      throw new Error('Password lama tidak sesuai');
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    const updatedUser = await userRepository.update(userId, {
+      password: hashedNewPassword
+    });
+
+    // Remove password from response
+    delete updatedUser.password;
+
+    return {
+      message: 'Password berhasil diubah',
+      user: updatedUser
+    };
   }
 }
 

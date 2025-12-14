@@ -35,17 +35,17 @@ class ReminderService {
       
       // Untuk setiap event, cari pembeli tiket yang sudah confirmed
       for (const event of upcomingEvents) {
-        console.log(`\n🎉 Processing event: ${event.nama_event} (ID: ${event.id})`);
+        console.log(`\n🎉 Processing event: ${event.nama} (ID: ${event.id})`);
         
         // Cari semua tiket yang confirmed untuk event ini
         const confirmedTickets = await db('tickets')
           .where({ 
-            event_id: event.id, 
-            status: 'confirmed'
+            event_id: event.id
           })
+          .whereIn('status', ['confirmed', 'approved'])
           .select('*');
         
-        console.log(`🎫 Found ${confirmedTickets.length} confirmed tickets`);
+        console.log(`🎫 Found ${confirmedTickets.length} confirmed/approved tickets`);
         
         // Untuk setiap tiket, kirim notifikasi reminder ke user
         for (const ticket of confirmedTickets) {
@@ -63,7 +63,7 @@ class ReminderService {
             await notificationRepository.create({
               user_id: ticket.user_id,
               title: '⏰ Pengingat Event',
-              message: `Event "${event.nama_event}" akan dimulai besok pada pukul ${event.jam_mulai}!`,
+              message: `Event "${event.nama}" akan dimulai besok!`,
               type: 'event_reminder',
               is_read: false
             });
@@ -105,7 +105,7 @@ class ReminderService {
       await notificationRepository.create({
         user_id: event.created_by,
         title: '✅ Event Disetujui',
-        message: `Event "${event.nama_event}" Anda telah disetujui oleh admin dan sekarang bisa dibeli oleh pembeli!`,
+        message: `Event "${event.nama}" Anda telah disetujui oleh admin dan sekarang bisa dibeli oleh pembeli!`,
         type: 'event_approved',
         is_read: false
       });
@@ -148,7 +148,7 @@ class ReminderService {
         await notificationRepository.create({
           user_id: ticket.user_id,
           title: '🎉 Event Selesai',
-          message: `Event "${event.nama_event}" telah selesai! Terima kasih telah menghadiri. Yuk tinggalkan review untuk acara ini!`,
+          message: `Event "${event.nama}" telah selesai! Terima kasih telah menghadiri. Yuk tinggalkan review untuk acara ini!`,
           type: 'event_completed',
           is_read: false
         });
@@ -158,7 +158,7 @@ class ReminderService {
       await notificationRepository.create({
         user_id: event.created_by,
         title: '🎉 Event Anda Selesai',
-        message: `Event "${event.nama_event}" telah selesai! Terima kasih kepada ${confirmedTickets.length} peserta yang hadir.`,
+        message: `Event "${event.nama}" telah selesai! Terima kasih kepada ${confirmedTickets.length} peserta yang hadir.`,
         type: 'event_completed',
         is_read: false
       });

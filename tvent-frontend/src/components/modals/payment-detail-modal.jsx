@@ -303,18 +303,6 @@ export default function PaymentDetailModal({ payment, onClose, onApprove, onReje
               </button>
             </div>
           )}
-
-          {/* Close Button for Non-Pending Status */}
-          {payment.status !== "pending" && (
-            <div className="border-t pt-4 sm:pt-6">
-              <button
-                onClick={onClose}
-                className="w-full py-2 sm:py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold text-sm sm:text-base"
-              >
-                Close
-              </button>
-            </div>
-          )}
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { authService } from "@/utils/services/authService";
 import { ticketService } from "@/utils/services/ticketService";
 import { apiClient } from "@/utils/api/client";
+import { formatDateTime, formatDate } from "@/utils/formatDate";
 import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
@@ -197,7 +198,7 @@ export default function TicketDetail() {
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Event</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {event?.judul || `Event #${ticket.event_id}`}
+                    {event?.nama || `Event #${ticket.event_id}`}
                   </p>
                 </div>
 
@@ -218,12 +219,7 @@ export default function TicketDetail() {
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Tanggal Pembelian</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {new Date(ticket.created_at).toLocaleDateString("id-ID", {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatDateTime(ticket.created_at)}
                   </p>
                 </div>
 
@@ -292,25 +288,38 @@ export default function TicketDetail() {
                 <div className="bg-gray-50 rounded-lg p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">Informasi Event</h3>
                   
-                  {event.gambar && (
+                  {event.poster && (
                     <img
-                      src={event.gambar}
-                      alt={event.judul}
+                      src={event.poster}
+                      alt={event.nama}
                       className="w-full h-48 object-cover rounded-lg mb-4"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
                     />
                   )}
 
                   <div className="space-y-3 text-sm">
                     <div>
+                      <p className="text-gray-600 font-medium">Nama Event</p>
+                      <p className="text-gray-900 font-semibold">{event.nama}</p>
+                    </div>
+                    
+                    <div>
                       <p className="text-gray-600 font-medium">Tanggal Event</p>
                       <p className="text-gray-900">
-                        {event.tanggal ? new Date(event.tanggal).toLocaleDateString("id-ID") : "Invalid Date"}
+                        {formatDateTime(event.tanggal)}
                       </p>
                     </div>
                     
                     <div>
                       <p className="text-gray-600 font-medium">Lokasi</p>
                       <p className="text-gray-900">{event.lokasi || "-"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-600 font-medium">Kategori</p>
+                      <p className="text-gray-900">{event.kategori || "-"}</p>
                     </div>
 
                     <div>

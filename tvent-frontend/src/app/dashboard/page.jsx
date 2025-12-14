@@ -17,6 +17,7 @@ export default function Dashboard() {
     events: 0,
     bookmarks: 0,
   });
+  const [recentTickets, setRecentTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,6 +49,19 @@ export default function Dashboard() {
           events: userEvents.length,
           bookmarks: userBookmarks.length,
         });
+        
+        // Combine tickets and events with type indicator
+        const combinedActivity = [
+          ...userTickets.map(t => ({ ...t, type: 'ticket', activityDate: t.created_at })),
+          ...userEvents.map(e => ({ ...e, type: 'event', activityDate: e.created_at }))
+        ];
+        
+        // Sort by date and limit to 8
+        const sortedActivity = combinedActivity.sort((a, b) => 
+          new Date(b.activityDate) - new Date(a.activityDate)
+        ).slice(0, 8);
+        setRecentTickets(sortedActivity);
+        
         setLoading(false);
       } catch (error) {
         console.error("Dashboard error:", error);
@@ -183,9 +197,118 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Recent Activity
           </h2>
-          <div className="text-center py-12">
-            <p className="text-gray-500">No recent activity yet</p>
-          </div>
+          {recentTickets.length > 0 ? (
+            <div className="space-y-4">
+              {recentTickets.map((item) => (
+                <div
+                  key={`${item.type}-${item.id}`}
+                  className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <div className="flex gap-4 flex-1">
+                    <div className="text-2xl">
+                      {item.type === 'ticket' ? '🎫' : '📅'}
+                    </div>
+                    <div className="flex-1">
+                      {item.type === 'ticket' ? (
+                        <>
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="font-semibold text-gray-900">
+                              {item.kode_tiket}
+                            </p>
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                item.status === "confirmed"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : item.status === "approved"
+                                  ? "bg-green-100 text-green-800"
+                                  : item.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : item.status === "cancelled"
+                                  ? "bg-red-100 text-red-800"
+                                  : item.status === "rejected"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : item.status === "used"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {item.status?.charAt(0).toUpperCase() +
+                                item.status?.slice(1)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Purchased on{" "}
+                            {item.activityDate ? new Date(item.activityDate).toLocaleDateString("id-ID") : "N/A"}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="font-semibold text-gray-900 truncate">
+                              {item.type === 'event' ? (item.nama || item.name || "Untitled Event") : item.name}
+                            </p>
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                                item.status === "approved"
+                                  ? "bg-green-100 text-green-800"
+                                  : item.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : item.status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : item.status === "completed"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {item.status?.charAt(0).toUpperCase() +
+                                item.status?.slice(1)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Created on{" "}
+                            {item.activityDate ? new Date(item.activityDate).toLocaleDateString("id-ID") : "N/A"}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <p className="font-semibold text-gray-900 mb-2">
+                      {item.type === 'ticket' 
+                        ? `Rp ${item.total_harga?.toLocaleString("id-ID") || "0"}` 
+                        : `${item.tiket_tersedia || 0} tickets left`}
+                    </p>
+                    <button
+                      onClick={() =>
+                        router.push(
+                          item.type === 'ticket' 
+                            ? `/my-tickets/${item.id}`
+                            : `/events/${item.id}`
+                        )
+                      }
+                      className={`${
+                        item.type === 'ticket'
+                          ? 'text-purple-600 hover:text-purple-700'
+                          : 'text-blue-600 hover:text-blue-700'
+                      } font-semibold text-sm`}
+                    >
+                      View Details →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">No recent activity yet</p>
+              <button
+                onClick={() => router.push("/events")}
+                className="text-purple-600 hover:text-purple-700 font-semibold"
+              >
+                Browse Events →
+              </button>
+            </div>
+          )}
         </div>
       </main>
 

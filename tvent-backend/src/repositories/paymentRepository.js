@@ -61,6 +61,7 @@ class PaymentRepository {
       .leftJoin('events', 'tickets.event_id', 'events.id')
       .select(
         'payments.id',
+        'payments.kode_pembayaran',
         'payments.ticket_id',
         'payments.jumlah',
         'payments.status',

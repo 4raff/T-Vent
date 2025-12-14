@@ -11,7 +11,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
-
+const reminderRoutes = require('./routes/reminderRoutes');
 
 const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -26,6 +26,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/reminders', reminderRoutes);
 app.use('/api/mahasiswa', mahasiswaRoutes);
 app.use('/api/admin', adminRoutes);
 
