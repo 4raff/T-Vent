@@ -18,8 +18,8 @@ class EventService {
     return eventRepository.delete(id);
   }
 
-  async listEvents() {
-    return eventRepository.list();
+  async listEvents(userRole = null) {
+    return eventRepository.list(userRole);
   }
 
   // tampilkanDetail: get event detail with related info
@@ -38,6 +38,21 @@ class EventService {
   // getUniqueCategories: get all unique categories from events
   async getUniqueCategories() {
     return eventRepository.getUniqueCategories();
+  }
+
+  // getFeaturedEvent: get most purchased event
+  async getFeaturedEvent() {
+    return eventRepository.getFeaturedEvent();
+  }
+
+  // getMostPurchasedEvents: get top N most purchased events
+  async getMostPurchasedEvents(limit = 10) {
+    return eventRepository.getMostPurchasedEvents(limit);
+  }
+
+  // getEventsByCreator: get all events created by a specific user
+  async getEventsByCreator(userId) {
+    return eventRepository.findByCreator(userId);
   }
 }
 

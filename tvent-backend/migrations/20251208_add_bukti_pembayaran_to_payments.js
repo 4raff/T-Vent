@@ -4,7 +4,7 @@
  */
 exports.up = function(knex) {
   return knex.schema.table('payments', function(table) {
-    table.text('bukti_pembayaran').after('metode_pembayaran').nullable(); // Add proof column
+    table.longtext('bukti_pembayaran').after('metode_pembayaran').nullable(); // Add proof column with longtext for large base64 images
   });
 };
 

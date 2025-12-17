@@ -47,8 +47,11 @@ class TicketService {
   }
 
   // batalkanTiket: cancel ticket
-  async batalkanTiket(ticketId) {
-    await ticketRepository.update(ticketId, { status: 'cancelled' });
+  async batalkanTiket(ticketId, cancellation_reason = null) {
+    await ticketRepository.update(ticketId, { 
+      status: 'cancelled',
+      cancellation_reason: cancellation_reason || null
+    });
     // Optionally, update payment status as well
     const payment = await paymentRepository.findByTicketId(ticketId);
     if (payment) await paymentRepository.update(payment.id, { status: 'cancelled' });

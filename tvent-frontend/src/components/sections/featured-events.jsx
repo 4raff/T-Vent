@@ -1,57 +1,108 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import EventCard from "@/components/events/event-card";
-import { events } from "@/data/events";
+import { eventService } from "@/utils/services/eventService";
 
 export default function FeaturedEvents() {
+  const router = useRouter();
   const [filter, setFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [events, setEvents] = useState([]);
+  const [categories, setCategories] = useState(["All"]);
+  const [loading, setLoading] = useState(true);
+  const itemsPerPage = 5;
 
-  const categories = [
-    "All",
-    "Workshop",
-    "Exhibition",
-    "Performance",
-    "Seminar",
-    "Social",
-  ];
+  // Fetch categories and events from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch events
+        const eventsResponse = await eventService.getMostPurchasedEvents(10);
+        const eventsData = eventsResponse.data || eventsResponse;
+        setEvents(Array.isArray(eventsData) ? eventsData : []);
+        
+        // Fetch categories
+        const categoriesResponse = await eventService.getCategories();
+        const categoriesData = Array.isArray(categoriesResponse) ? categoriesResponse : categoriesResponse.data || [];
+        setCategories(["All", ...categoriesData]);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setEvents([]);
+        setCategories(["All"]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredEvents =
     filter === "All"
       ? events
-      : events.filter((event) => event.category === filter);
+      : events.filter((event) => {
+          // Match by kategori field from API
+          const eventCategory = event.kategori || event.category || "";
+          return eventCategory.toLowerCase() === filter.toLowerCase();
+        });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedEvents = filteredEvents.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
+  // Reset to first page when filter changes
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+  };
+
+  const handleViewAll = () => {
+    router.push("/events");
+  };
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-gray-500">Loading events...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section
-      id="events"
-      className="py-20 px-4 sm:px-6 lg:px-8 bg-background relative"
-    >
-      {/* Background decoration */}
-      <div className="absolute top-20 right-0 w-64 h-64 bg-accent-2 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
-      <div className="absolute bottom-0 left-20 w-64 h-64 bg-accent-1 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Section header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent-1 bg-clip-text text-transparent mb-4">
-            Event Unggulans
-          </h2>
-          <p className="text-foreground/70 text-lg max-w-2xl mx-auto">
-            Discover a curated selection of events celebrating art, culture, and
-            creativity
-          </p>
+    <section className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <h2 className="text-4xl font-bold text-foreground">Event Unggulan</h2>
+            <p className="text-foreground/60 mt-2">Discover amazing events happening around campus</p>
+          </div>
+          <button 
+            onClick={handleViewAll}
+            className="px-6 py-2 border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary/5 transition">
+            View All →
+          </button>
         </div>
 
         {/* Filter buttons */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+        <div className="flex flex-wrap gap-2 mb-8">
           {categories.map((cat) => (
             <button
               key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 ${
+              onClick={() => handleFilterChange(cat)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                 filter === cat
-                  ? "bg-primary text-white shadow-lg scale-105"
-                  : "bg-card text-foreground border-2 border-border hover:border-primary hover:text-primary"
+                  ? "bg-primary text-white shadow-lg"
+                  : "bg-gray-100 text-foreground border border-gray-300 hover:border-primary hover:text-primary"
               }`}
             >
               {cat}
@@ -59,26 +110,77 @@ export default function FeaturedEvents() {
           ))}
         </div>
 
-        {/* Events grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event) => {
-            // Normalize image path
-            let img = event.image || "";
-            if (img) {
-              if (img.startsWith("/")) {
-                if (!img.startsWith("/images/")) img = `/images${img}`;
-              } else {
-                img = `/images/${img}`;
-              }
-            } else {
-              img = "/images/placeholder.svg";
-            }
-
-            return (
-              <EventCard key={event.id} event={{ ...event, image: img }} />
-            );
-          })}
+        {/* Events count info */}
+        <div className="mb-6 text-foreground/60">
+          <p className="text-sm">
+            {filteredEvents.length === 0 
+              ? "No events found" 
+              : `Showing ${startIndex + 1} to ${Math.min(startIndex + itemsPerPage, filteredEvents.length)} of ${filteredEvents.length} events`}
+          </p>
         </div>
+
+        {/* Events grid */}
+        {filteredEvents.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {paginatedEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                {/* Previous button */}
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-primary text-white hover:bg-primary/90 active:scale-95"
+                  }`}
+                >
+                  ← Previous
+                </button>
+
+                {/* Page numbers */}
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        currentPage === page
+                          ? "bg-primary text-white shadow-lg scale-110"
+                          : "bg-gray-100 text-foreground border border-gray-300 hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next button */}
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-primary text-white hover:bg-primary/90 active:scale-95"
+                  }`}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No events available in this category.</p>
+          </div>
+        )}
       </div>
     </section>
   );

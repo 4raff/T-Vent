@@ -3,7 +3,8 @@ const ewalletProviderService = require('../services/ewalletProviderService');
 const EwalletProviderController = {
   async getAll(req, res) {
     try {
-      const providers = await ewalletProviderService.getAllEwalletProviders(true);
+      const includeInactive = req.query.includeInactive === 'true';
+      const providers = await ewalletProviderService.getAllEwalletProviders(!includeInactive);
       res.json({
         message: 'Ewallet providers retrieved successfully',
         data: providers
@@ -38,11 +39,11 @@ const EwalletProviderController = {
 
   async create(req, res) {
     try {
-      const { name, code, instructions } = req.body;
+      const { name, code, account_number } = req.body;
       const provider = await ewalletProviderService.createEwalletProvider({
         name,
         code,
-        instructions,
+        account_number,
         is_active: true
       });
       res.status(201).json({
@@ -60,11 +61,11 @@ const EwalletProviderController = {
 
   async update(req, res) {
     try {
-      const { name, code, instructions, is_active } = req.body;
+      const { name, code, account_number, is_active } = req.body;
       const provider = await ewalletProviderService.updateEwalletProvider(req.params.id, {
         name,
         code,
-        instructions,
+        account_number,
         is_active
       });
       res.json({

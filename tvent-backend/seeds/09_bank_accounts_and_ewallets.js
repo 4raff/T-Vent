@@ -40,7 +40,7 @@ exports.seed = async function(knex) {
     {
       name: 'GCash',
       code: 'gcash',
-      instructions: 'Kirim uang ke nomor GCash yang akan diberikan',
+      account_number: '09123456789',
       is_active: true,
       created_at: new Date(),
       updated_at: new Date()
@@ -48,7 +48,7 @@ exports.seed = async function(knex) {
     {
       name: 'PayMaya',
       code: 'paymaya',
-      instructions: 'Scan QR code atau input nomor PayMaya kami',
+      account_number: '09987654321',
       is_active: true,
       created_at: new Date(),
       updated_at: new Date()
@@ -56,7 +56,7 @@ exports.seed = async function(knex) {
     {
       name: 'Jeepney',
       code: 'jeepney',
-      instructions: 'Transfer via aplikasi Jeepney',
+      account_number: '09555666777',
       is_active: true,
       created_at: new Date(),
       updated_at: new Date()

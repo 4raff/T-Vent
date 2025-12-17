@@ -64,4 +64,69 @@ export const eventService = {
       throw error;
     }
   },
+
+  /**
+   * Get featured event (most purchased)
+   */
+  async getFeaturedEvent() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/featured/single`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getFeaturedEvent error:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Get most purchased events
+   */
+  async getMostPurchasedEvents(limit = 10) {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/featured/most-purchased?limit=${limit}`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getMostPurchasedEvents error:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all unique event categories
+   */
+  async getCategories() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/categories`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getCategories error:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all events created by logged-in user
+   */
+  async getMyEvents() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/my-events`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getMyEvents error:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all tickets for a specific event
+   */
+  async getTicketsByEvent(eventId) {
+    try {
+      const response = await apiClient.get(`/tickets?event_id=${eventId}`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getTicketsByEvent error:', error.message);
+      throw error;
+    }
+  },
 };

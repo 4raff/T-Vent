@@ -16,6 +16,10 @@ class NotificationService {
   async markNotificationAsRead(id) {
     return notificationRepository.markAsRead(id);
   }
+
+  async deleteNotification(id) {
+    return notificationRepository.deleteById(id);
+  }
 }
 
 module.exports = new NotificationService();

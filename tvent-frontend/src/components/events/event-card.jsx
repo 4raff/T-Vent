@@ -2,11 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { formatDateTime } from "@/utils/formatDate";
 
 export default function EventCard({ event }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const capitalizeStatus = (status) => {
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   const handleViewDetails = () => {
     router.push(`/events/${event.id}`);
@@ -20,14 +28,13 @@ export default function EventCard({ event }) {
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-gray-200">
-        <Image
-          src={event.poster || "/images/placeholder.svg"}
-          alt={event.nama || "Event image" }
-          width={400}
-          height={300}
+        <img
+          src={imageError ? "/images/placeholder.svg" : (event.poster || "/images/placeholder.svg")}
+          alt={event.nama || "Event image"}
           className={`w-full h-full object-cover transition duration-500 ${
             isHovered ? "scale-110" : "scale-100"
           }`}
+          onError={() => setImageError(true)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
@@ -39,7 +46,7 @@ export default function EventCard({ event }) {
             'bg-red-500'
           } backdrop-blur-sm`}
         >
-          {event.status || 'pending'}
+          {capitalizeStatus(event.status || 'pending')}
         </div>
 
         {/* Capacity Badge */}
@@ -62,7 +69,7 @@ export default function EventCard({ event }) {
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <span>📅</span>
-            <span>{event.tanggal ? new Date(event.tanggal).toLocaleDateString('id-ID') : 'TBD'}</span>
+            <span>{formatDateTime(event.tanggal)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <span>📍</span>

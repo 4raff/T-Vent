@@ -15,10 +15,17 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isChangingPasswordSaving, setIsChangingPasswordSaving] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     no_handphone: "",
+  });
+  const [passwordFormData, setPasswordFormData] = useState({
+    old_password: "",
+    new_password: "",
+    confirm_password: "",
   });
 
   useEffect(() => {
@@ -88,6 +95,49 @@ export default function ProfilePage() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleChangePassword = async () => {
+    // Validate
+    if (!passwordFormData.old_password || !passwordFormData.new_password || !passwordFormData.confirm_password) {
+      toast.showError("Semua field harus diisi");
+      return;
+    }
+
+    if (passwordFormData.new_password !== passwordFormData.confirm_password) {
+      toast.showError("Password baru tidak cocok");
+      return;
+    }
+
+    setIsChangingPasswordSaving(true);
+    try {
+      await apiClient.put("/users/change-password", {
+        old_password: passwordFormData.old_password,
+        new_password: passwordFormData.new_password,
+        confirm_password: passwordFormData.confirm_password,
+      });
+
+      toast.showSuccess("Password berhasil diubah!");
+      setIsChangingPassword(false);
+      setPasswordFormData({
+        old_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+    } catch (error) {
+      console.error("Change password error:", error);
+      toast.showError(error.data?.error || error.data?.message || "Gagal mengubah password");
+    } finally {
+      setIsChangingPasswordSaving(false);
     }
   };
 
@@ -231,9 +281,89 @@ export default function ProfilePage() {
           {/* Danger Zone */}
           <div className="mt-12 pt-8 border-t">
             <h3 className="text-lg font-bold text-red-600 mb-4">Danger Zone</h3>
-            <button className="px-6 py-2 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-semibold">
-              Change Password
-            </button>
+            
+            {!isChangingPassword ? (
+              <button
+                onClick={() => setIsChangingPassword(true)}
+                className="px-6 py-2 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-semibold"
+              >
+                Change Password
+              </button>
+            ) : (
+              <div className="bg-red-50 p-6 rounded-lg border border-red-200">
+                <h4 className="font-semibold text-gray-900 mb-4">Change Your Password</h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      name="old_password"
+                      value={passwordFormData.old_password}
+                      onChange={handlePasswordInputChange}
+                      placeholder="Enter your current password"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      name="new_password"
+                      value={passwordFormData.new_password}
+                      onChange={handlePasswordInputChange}
+                      placeholder="Enter new password (min 6 chars, include uppercase, lowercase, number)"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-600"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Must contain uppercase, lowercase, and number
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      name="confirm_password"
+                      value={passwordFormData.confirm_password}
+                      onChange={handlePasswordInputChange}
+                      placeholder="Confirm your new password"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={isChangingPasswordSaving}
+                      className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold disabled:bg-gray-400"
+                    >
+                      {isChangingPasswordSaving ? "Changing..." : "Change Password"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsChangingPassword(false);
+                        setPasswordFormData({
+                          old_password: "",
+                          new_password: "",
+                          confirm_password: "",
+                        });
+                      }}
+                      className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

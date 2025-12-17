@@ -16,6 +16,8 @@ class PaymentRepository {
         'users.no_handphone as user_phone',
         'tickets.kode_tiket',
         'tickets.jumlah as quantity',
+        'tickets.status as ticket_status',
+        'tickets.cancellation_reason',
         'events.nama as event_name'
       )
       .first();
@@ -59,6 +61,7 @@ class PaymentRepository {
       .leftJoin('events', 'tickets.event_id', 'events.id')
       .select(
         'payments.id',
+        'payments.kode_pembayaran',
         'payments.ticket_id',
         'payments.jumlah',
         'payments.status',
@@ -71,6 +74,8 @@ class PaymentRepository {
         'users.no_handphone as user_phone',
         'tickets.kode_tiket',
         'tickets.jumlah as quantity',
+        'tickets.status as ticket_status',
+        'tickets.cancellation_reason',
         'events.nama as event_name'
       );
   }
@@ -88,6 +93,8 @@ class PaymentRepository {
         'users.no_handphone as user_phone',
         'tickets.kode_tiket',
         'tickets.jumlah as quantity',
+        'tickets.status as ticket_status',
+        'tickets.cancellation_reason',
         'events.nama as event_name'
       )
       .first();

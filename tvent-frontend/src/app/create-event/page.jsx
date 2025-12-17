@@ -38,6 +38,8 @@ export default function CreateEventPage() {
     jumlah_tiket: "",
   });
 
+  const [posterPreview, setPosterPreview] = useState(null);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -70,6 +72,66 @@ export default function CreateEventPage() {
         [name]: "",
       }));
     }
+  };
+
+  const handlePosterChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validasi ukuran file (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.showError("Ukuran file terlalu besar (max 5MB)");
+      return;
+    }
+
+    // Validasi tipe file
+    if (!file.type.startsWith("image/")) {
+      toast.showError("File harus berupa gambar");
+      return;
+    }
+
+    // Read and compress image
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Resize if larger than 1000px
+        if (width > 1000) {
+          height = (height * 1000) / width;
+          width = 1000;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Always compress to JPEG for smaller file size
+        let quality = 0.85;
+        let compressed = canvas.toDataURL('image/jpeg', quality);
+        
+        // If still too large, reduce quality further - keep under 300KB for database safety
+        while (compressed.length > 300 * 1024 && quality > 0.4) { // 300KB max
+          quality -= 0.1;
+          compressed = canvas.toDataURL('image/jpeg', quality);
+        }
+        
+        setFormData((prev) => ({
+          ...prev,
+          poster: compressed,
+        }));
+        setPosterPreview(compressed);
+      };
+      img.onerror = () => {
+        toast.showError("Gagal memproses gambar. Coba dengan file lain.");
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const validateForm = () => {
@@ -107,6 +169,10 @@ export default function CreateEventPage() {
 
     if (!formData.jumlah_tiket || isNaN(formData.jumlah_tiket) || formData.jumlah_tiket <= 0) {
       newErrors.jumlah_tiket = "Number of tickets must be a positive number";
+    }
+
+    if (!formData.poster) {
+      newErrors.poster = "Poster image is required";
     }
 
     setErrors(newErrors);
@@ -333,22 +399,62 @@ export default function CreateEventPage() {
             )}
           </div>
 
-          {/* Poster URL */}
+          {/* Poster Image */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Poster Image URL
+              Poster Image *
             </label>
-            <input
-              type="url"
-              name="poster"
-              value={formData.poster}
-              onChange={handleInputChange}
-              placeholder="e.g., https://example.com/poster.jpg"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-600 transition"
-            />
-            <p className="text-gray-500 text-xs mt-1">
-              Leave empty to use a default image
-            </p>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePosterChange}
+                className="hidden"
+                id="poster-input"
+              />
+              <label
+                htmlFor="poster-input"
+                className="flex flex-col items-center justify-center cursor-pointer"
+              >
+                {posterPreview ? (
+                  <div className="w-full">
+                    <img
+                      src={posterPreview}
+                      alt="Poster preview"
+                      className="max-h-64 mx-auto rounded"
+                    />
+                    <p className="text-center text-sm text-gray-600 mt-3">
+                      Click to change
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <svg
+                      className="w-16 h-16 text-gray-400 mx-auto mb-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    <p className="text-gray-700 font-semibold">
+                      Upload poster image
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      PNG, JPG, atau GIF (max 5MB)
+                    </p>
+                  </div>
+                )}
+              </label>
+            </div>
+            {errors.poster && (
+              <p className="text-red-600 text-sm mt-1">{errors.poster}</p>
+            )}
           </div>
 
           {/* Form Actions */}

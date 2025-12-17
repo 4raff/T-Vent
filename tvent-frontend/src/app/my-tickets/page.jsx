@@ -3,10 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/utils/services/authService";
+import { ticketService } from "@/utils/services/ticketService";
 import { apiClient } from "@/utils/api/client";
 import { useToast } from "@/components/common/ToastProvider";
+import { capitalizeStatus, getStatusColor } from "@/utils/helpers";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import PageHeader from "@/components/common/PageHeader";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton";
+import CancelTicketModal from "@/components/modals/cancel-ticket-modal";
 
 export default function MyTickets() {
   const router = useRouter();
@@ -14,28 +19,33 @@ export default function MyTickets() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [cancellingTicketId, setCancellingTicketId] = useState(null);
+  const [selectedTicketForCancel, setSelectedTicketForCancel] = useState(null);
+  const [isProcessingCancel, setIsProcessingCancel] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  const capitalizeStatus = (status) => {
-    return status
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  const handleCancelClick = (ticket) => {
+    setSelectedTicketForCancel(ticket);
   };
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'used':
-        return 'bg-blue-100 text-blue-800';
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleConfirmCancel = async (ticketId, reason) => {
+    setIsProcessingCancel(true);
+    try {
+      await ticketService.cancelTicket(ticketId, reason);
+      toast.showSuccess("Tiket berhasil dibatalkan");
+      setSelectedTicketForCancel(null);
+      
+      // Refresh tickets
+      if (user) {
+        await fetchTickets(user);
+      }
+    } catch (error) {
+      console.error("Error cancelling ticket:", error);
+      const errorMsg = error.data?.message || "Gagal membatalkan tiket";
+      toast.showError(errorMsg);
+    } finally {
+      setIsProcessingCancel(false);
     }
   };
 
@@ -108,18 +118,13 @@ export default function MyTickets() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 py-16">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-gray-300 rounded w-1/3"></div>
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-300 rounded"></div>
-              ))}
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <PageHeader title="My Tickets" subtitle="Loading your tickets..." />
+          <LoadingSkeleton count={3} variant="list" />
         </div>
+        <Footer />
       </div>
     );
   }
@@ -129,14 +134,21 @@ export default function MyTickets() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">My Tickets</h1>
-          <p className="text-gray-600">View and manage your event tickets</p>
-        </div>
+        <PageHeader 
+          title="My Tickets" 
+          subtitle="View and manage your event tickets" 
+        />
 
         {tickets.length > 0 ? (
           <div className="space-y-4">
-            {tickets.map((ticket) => (
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, tickets.length)} to {Math.min(currentPage * itemsPerPage, tickets.length)} of {tickets.length} tickets
+            </div>
+
+            {tickets
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .map((ticket) => (
               <div
                 key={ticket.id}
                 className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
@@ -154,14 +166,24 @@ export default function MyTickets() {
                     </p>
                     {ticket.status === 'rejected' && ticket.rejection_reason && (
                       <p className="text-red-600 text-sm font-semibold mt-2">
-                        Alasan: {ticket.rejection_reason}
+                        Alasan Penolakan: {ticket.rejection_reason}
+                      </p>
+                    )}
+                    {ticket.status === 'cancelled' && ticket.cancellation_reason && (
+                      <p className="text-orange-600 text-sm font-semibold mt-2">
+                        Alasan Pembatalan: {ticket.cancellation_reason}
                       </p>
                     )}
                   </div>
                   <div className="text-right">
-                    <span className={`inline-block px-4 py-2 rounded-full font-semibold ${getStatusColor(ticket.status)}`}>
-                      {capitalizeStatus(ticket.status)}
-                    </span>
+                    {(() => {
+                      const colors = getStatusColor(ticket.status);
+                      return (
+                        <span className={`inline-block px-4 py-2 rounded-full font-semibold ${colors.bgColor} ${colors.textColor}`}>
+                          {capitalizeStatus(ticket.status)}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="mt-4 flex gap-3">
@@ -170,14 +192,64 @@ export default function MyTickets() {
                     className="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition">
                     View Details
                   </button>
-                  {ticket.status === "pending" && (
-                    <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition">
+                  {(ticket.status === "pending" || ticket.status === "confirmed") && (
+                    <button 
+                      onClick={() => handleCancelClick(ticket)}
+                      className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition">
                       Cancel Ticket
                     </button>
                   )}
                 </div>
               </div>
             ))}
+
+            {/* Pagination Controls */}
+            {Math.ceil(tickets.length / itemsPerPage) > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                  }`}
+                >
+                  ← Previous
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from(
+                    { length: Math.ceil(tickets.length / itemsPerPage) },
+                    (_, i) => i + 1
+                  ).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        currentPage === page
+                          ? "bg-purple-600 text-white shadow-lg scale-110"
+                          : "bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-600 hover:text-purple-600"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(Math.ceil(tickets.length / itemsPerPage), currentPage + 1))}
+                  disabled={currentPage === Math.ceil(tickets.length / itemsPerPage)}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === Math.ceil(tickets.length / itemsPerPage)
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                  }`}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -193,6 +265,16 @@ export default function MyTickets() {
           </div>
         )}
       </main>
+
+      {/* Cancel Ticket Modal */}
+      {selectedTicketForCancel && (
+        <CancelTicketModal
+          ticket={selectedTicketForCancel}
+          onCancel={() => setSelectedTicketForCancel(null)}
+          onConfirm={handleConfirmCancel}
+          isLoading={isProcessingCancel}
+        />
+      )}
 
       <Footer />
     </div>

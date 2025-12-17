@@ -7,9 +7,13 @@ import { authService } from "@/utils/services/authService";
 import { eventService } from "@/utils/services/eventService";
 import { reviewService } from "@/utils/services/reviewService";
 import { bookmarkService } from "@/utils/services/bookmarkService";
+import { capitalizeFirstLetter, getStatusColor } from "@/utils/helpers";
+import { formatDateTime } from "@/utils/formatDate";
+import { useCheckout } from "@/contexts/CheckoutContext";
 import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import LoginModal from "@/components/modals/login-modal";
 
 export default function EventDetail() {
   const router = useRouter();
@@ -31,6 +35,8 @@ export default function EventDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [creatorInfo, setCreatorInfo] = useState(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -44,6 +50,12 @@ export default function EventDetail() {
         if (eventId) {
           const eventData = await eventService.getEvent(eventId);
           setEvent(eventData);
+          
+          // Creator info sudah termasuk dalam event data (creator_name)
+          // Gunakan langsung dari event object
+          setCreatorInfo({
+            username: eventData.creator_name || "Creator"
+          });
           
           // Check if user has bookmarked this event
           if (userData) {
@@ -113,18 +125,27 @@ export default function EventDetail() {
     }
   };
 
+  const { setCheckout } = useCheckout();
+
   const handleBooking = async () => {
     if (!user) {
-      router.push("/");
+      toast.showWarning("Silakan login terlebih dahulu untuk booking");
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Validasi event harus approved
+    if (event.status !== "approved") {
+      toast.showError("Event ini belum dapat di-booking. Status: " + capitalizeFirstLetter(event.status));
       return;
     }
 
     setIsKirimting(true);
     try {
-      // Redirect to checkout page with event and quantity
-      router.push(
-        `/checkout?eventId=${eventId}&quantity=${quantity}`
-      );
+      // Set checkout data in context (more secure than URL params)
+      setCheckout(eventId, quantity);
+      // Redirect to checkout page without exposing event ID or quantity in URL
+      router.push(`/checkout`);
     } catch (error) {
       console.error("Booking error:", error);
       toast.showError(error.data?.message || "Gagal lanjut ke checkout");
@@ -152,6 +173,21 @@ export default function EventDetail() {
     } catch (error) {
       console.error("Error toggling bookmark:", error);
       toast.showError("Gagal mengubah bookmark");
+    }
+  };
+
+  const handleContactCreator = () => {
+    if (!user) {
+      toast.showWarning("Silakan login terlebih dahulu untuk menghubungi creator");
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Redirect ke messages page dengan creator ID (created_by field dari backend)
+    if (event.created_by) {
+      router.push(`/notifications?tab=messages&contact=${event.created_by}`);
+    } else {
+      toast.showError("Informasi creator event tidak ditemukan");
     }
   };
 
@@ -208,6 +244,9 @@ export default function EventDetail() {
                 src={event.poster || "https://via.placeholder.com/800x400"}
                 alt={event.nama}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/800x400";
+                }}
               />
             </div>
 
@@ -218,8 +257,8 @@ export default function EventDetail() {
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">
                     {event.nama}
                   </h1>
-                  <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
-                    {event.status || "Pending"}
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(event.status).bgColor} ${getStatusColor(event.status).textColor}`}>
+                    {capitalizeFirstLetter(event.status)}
                   </span>
                 </div>
                 <button
@@ -237,14 +276,7 @@ export default function EventDetail() {
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Date & Time</p>
                   <p className="text-lg font-semibold text-gray-900 mt-2">
-                    {new Date(event.tanggal).toLocaleDateString("id-ID", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatDateTime(event.tanggal)}
                   </p>
                 </div>
                 <div>
@@ -266,6 +298,31 @@ export default function EventDetail() {
                   <p className="text-lg font-semibold text-gray-900 mt-2">
                     {event.tiket_tersedia}/{event.jumlah_tiket}
                   </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-600 text-sm font-medium mb-3">Event Creator</p>
+                  <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center text-lg font-bold text-purple-700">
+                        {creatorInfo?.username?.charAt(0).toUpperCase() || "C"}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {creatorInfo?.username || "Creator"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Event Organizer
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleContactCreator}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-sm whitespace-nowrap"
+                      title="Send message to event creator"
+                    >
+                      💬 Message
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -296,7 +353,7 @@ export default function EventDetail() {
 
               {/* Review Form */}
               {showReviewForm && user && (
-                <form onKirim={handleKirimReview} className="bg-gray-50 rounded-lg p-6 mb-6">
+                <form onSubmit={handleKirimReview} className="bg-gray-50 rounded-lg p-6 mb-6">
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Rating
@@ -411,7 +468,7 @@ export default function EventDetail() {
                 </div>
               )}
 
-              {/* Booking Form */}
+              {/* Booking Button */}
               {!showBooking ? (
                 <button
                   onClick={() => setShowBooking(true)}
@@ -478,6 +535,13 @@ export default function EventDetail() {
       </main>
 
       <Footer />
+
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => setShowLoginModal(false)}
+          onLogin={handleLoginSuccess}
+        />
+      )}
     </div>
   );
 }

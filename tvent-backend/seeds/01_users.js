@@ -146,6 +146,60 @@ exports.seed = async function(knex) {
       no_handphone: '081234567804',
       role: 'user',
       profile_picture: 'joko.jpg'
+    },
+    {
+      id: 16,
+      username: 'karina',
+      email: 'karina@student.telkomuniversity.ac.id',
+      password: password,
+      no_handphone: '081234567805',
+      role: 'user',
+      profile_picture: 'karina.jpg'
+    },
+    {
+      id: 17,
+      username: 'lala',
+      email: 'lala@student.telkomuniversity.ac.id',
+      password: password,
+      no_handphone: '081234567806',
+      role: 'user',
+      profile_picture: 'lala.jpg'
+    },
+    {
+      id: 18,
+      username: 'miko',
+      email: 'miko@student.telkomuniversity.ac.id',
+      password: password,
+      no_handphone: '081234567807',
+      role: 'user',
+      profile_picture: 'miko.jpg'
+    },
+    {
+      id: 19,
+      username: 'nana',
+      email: 'nana@student.telkomuniversity.ac.id',
+      password: password,
+      no_handphone: '081234567808',
+      role: 'user',
+      profile_picture: 'nana.jpg'
+    },
+    {
+      id: 20,
+      username: 'oka',
+      email: 'oka@student.telkomuniversity.ac.id',
+      password: password,
+      no_handphone: '081234567809',
+      role: 'user',
+      profile_picture: 'oka.jpg'
+    },
+    {
+      id: 21,
+      username: 'pita',
+      email: 'pita@student.telkomuniversity.ac.id',
+      password: password,
+      no_handphone: '081234567810',
+      role: 'user',
+      profile_picture: 'pita.jpg'
     }
   ]);
 };

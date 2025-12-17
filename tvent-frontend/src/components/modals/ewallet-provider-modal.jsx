@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-export default function EwalletProviderModal({ isOpen, onTutup, onTambah }) {
+export default function EwalletProviderModal({ isOpen, onClose, onAdd }) {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    instructions: ''
+    account_number: ''
   });
   const [isKirimting, setIsKirimting] = useState(false);
 
@@ -20,19 +20,28 @@ export default function EwalletProviderModal({ isOpen, onTutup, onTambah }) {
       return;
     }
     setIsKirimting(true);
-    await onTambah(formData);
+    await onAdd(formData);
     setIsKirimting(false);
-    setFormData({ name: '', code: '', instructions: '' });
+    setFormData({ name: '', code: '', account_number: '' });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Tambah E-Wallet Provider</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">Tambah E-Wallet Provider</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
         
-        <form onKirim={handleKirim} className="space-y-4">
+        <form onSubmit={handleKirim} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Provider Name *
@@ -63,14 +72,14 @@ export default function EwalletProviderModal({ isOpen, onTutup, onTambah }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Instructions
+              Account Number
             </label>
-            <textarea
-              name="instructions"
-              value={formData.instructions}
+            <input
+              type="text"
+              name="account_number"
+              value={formData.account_number}
               onChange={handleChange}
-              placeholder="e.g., Scan QR code or input GCash number"
-              rows="3"
+              placeholder="e.g., 09123456789"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
             />
           </div>
@@ -78,7 +87,7 @@ export default function EwalletProviderModal({ isOpen, onTutup, onTambah }) {
           <div className="flex gap-3 pt-4">
             <button
               type="button"
-              onClick={onTutup}
+              onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50"
             >
               Batal

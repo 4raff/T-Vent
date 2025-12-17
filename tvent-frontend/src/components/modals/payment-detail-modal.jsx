@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { apiClient } from "@/utils/api/client";
 import { useToast } from "@/components/common/ToastProvider";
 
 export default function PaymentDetailModal({ payment, onClose, onApprove, onReject }) {
   const toast = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showReasonInput, setShowReasonInput] = useState(false);
 
@@ -175,15 +175,13 @@ export default function PaymentDetailModal({ payment, onClose, onApprove, onReje
               {payment.bukti_pembayaran ? (
                 <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
                   <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-3 sm:mb-4">Payment Proof</h3>
-                  <div className="relative w-full h-48 sm:h-64 bg-gray-200 rounded-lg overflow-hidden">
-                    <Image
-                      src={payment.bukti_pembayaran}
-                      alt="Payment proof"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
+                  <img
+                    src={payment.bukti_pembayaran}
+                    alt="Payment proof"
+                    className="w-full h-48 sm:h-64 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                    onClick={() => setFullscreenImage(payment.bukti_pembayaran)}
+                  />
+                  <p className="text-center text-xs text-gray-500 mt-2">Click to view fullscreen</p>
                 </div>
               ) : (
                 <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
@@ -212,6 +210,25 @@ export default function PaymentDetailModal({ payment, onClose, onApprove, onReje
                       <p className="font-mono text-sm text-gray-900 break-all">
                         {payment.kode_tiket || "-"}
                       </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Ticket Cancellation Info */}
+              {(payment.ticket_status === 'cancelled' || payment.status === 'cancelled') && payment.cancellation_reason && (
+                <div className="border rounded-lg p-3 sm:p-4 bg-orange-50 border-orange-200">
+                  <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-3 sm:mb-4">
+                    ⚠️ Ticket Cancellation
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <p className="font-semibold text-orange-600">Cancelled</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Cancellation Reason</p>
+                      <p className="text-orange-900 text-sm">{payment.cancellation_reason}</p>
                     </div>
                   </div>
                 </div>
@@ -274,8 +291,45 @@ export default function PaymentDetailModal({ payment, onClose, onApprove, onReje
               )}
             </div>
           )}
+
+          {/* Close Button for Non-Pending Status */}
+          {payment.status !== "pending" && (
+            <div className="border-t pt-4 sm:pt-6">
+              <button
+                onClick={onClose}
+                className="w-full py-2 sm:py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold text-sm sm:text-base"
+              >
+                Close
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <div className="relative w-full h-full max-w-6xl flex items-center justify-center">
+            <img
+              src={fullscreenImage}
+              alt="Fullscreen proof"
+              className="w-full h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setFullscreenImage(null)}
+              className="absolute top-6 right-6 bg-white rounded-full p-3 hover:bg-gray-200 transition shadow-lg"
+            >
+              <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

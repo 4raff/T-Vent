@@ -6,8 +6,12 @@ import { eventService } from "@/utils/services/eventService";
 import { authService } from "@/utils/services/authService";
 import { useToast } from "@/components/common/ToastProvider";
 import { categoriesService } from "@/utils/services/categoriesService";
+import { capitalizeFirstLetter, getStatusColor } from "@/utils/helpers";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import PageHeader from "@/components/common/PageHeader";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton";
+import EventCard from "@/components/events/event-card";
 
 export default function EventsPage() {
   const router = useRouter();
@@ -22,6 +26,8 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [user, setUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3x3 grid
 
   useEffect(() => {
     // Get initial values from URL params
@@ -72,6 +78,9 @@ export default function EventsPage() {
   useEffect(() => {
     let filtered = events;
 
+    // Filter by approved status only
+    filtered = filtered.filter((event) => event.status === "approved");
+
     // Filter by category
     if (selectedCategory !== "All") {
       filtered = filtered.filter(
@@ -89,7 +98,15 @@ export default function EventsPage() {
       );
     }
 
+    // Sort by creation date (newest created first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateB - dateA;
+    });
+
     setFilteredEvents(filtered);
+    setCurrentPage(1); // Reset ke halaman 1 saat filter berubah
   }, [searchTerm, selectedCategory, events]);
 
   return (
@@ -98,14 +115,10 @@ export default function EventsPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Discover Events
-          </h1>
-          <p className="text-gray-600">
-            Find and book your next amazing event
-          </p>
-        </div>
+        <PageHeader 
+          title="Discover Events" 
+          subtitle="Find and book your next amazing event" 
+        />
 
         {/* Search Bar */}
         <div className="mb-8">
@@ -137,76 +150,83 @@ export default function EventsPage() {
 
         {/* Events Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow animate-pulse">
-                <div className="h-48 bg-gray-300 rounded-t-lg"></div>
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-300 rounded"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <LoadingSkeleton count={6} variant="card" />
         ) : filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map((event) => (
-              <div
-                key={event.id}
-                onClick={() => router.push(`/events/${event.id}`)}
-                className="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer overflow-hidden"
-              >
-                {/* Image */}
-                <div className="h-48 bg-gray-200 overflow-hidden">
-                  <img
-                    src={event.poster || "https://via.placeholder.com/300x200"}
-                    alt={event.nama}
-                    className="w-full h-full object-cover hover:scale-105 transition"
-                  />
+          <>
+            {/* Results info */}
+            <div className="mb-6 text-gray-600">
+              <p className="text-sm">
+                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredEvents.length)} to {Math.min(currentPage * itemsPerPage, filteredEvents.length)} of {filteredEvents.length} events
+              </p>
+            </div>
+
+            {/* Events Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {filteredEvents
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((event) => (
+                  <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {Math.ceil(filteredEvents.length / itemsPerPage) > 1 && (
+              <div className="flex justify-center items-center gap-2 mb-12">
+                {/* Previous button */}
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                  }`}
+                >
+                  ← Previous
+                </button>
+
+                {/* Page numbers */}
+                <div className="flex gap-1">
+                  {Array.from(
+                    { length: Math.ceil(filteredEvents.length / itemsPerPage) },
+                    (_, i) => i + 1
+                  ).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        currentPage === page
+                          ? "bg-purple-600 text-white shadow-lg scale-110"
+                          : "bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-600 hover:text-purple-600"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Content */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-bold text-gray-900 line-clamp-2">
-                      {event.nama}
-                    </h3>
-                  </div>
-
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {event.deskripsi}
-                  </p>
-
-                  <div className="space-y-2 mb-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span>📅</span>
-                      <span>
-                        {new Date(event.tanggal).toLocaleDateString("id-ID")}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>📍</span>
-                      <span className="line-clamp-1">{event.lokasi}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
-                      {event.status}
-                    </span>
-                    <span className="text-lg font-bold text-purple-600">
-                      Rp{event.harga?.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-
-                  <button className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold">
-                    View Details
-                  </button>
-                </div>
+                {/* Next button */}
+                <button
+                  onClick={() =>
+                    setCurrentPage(
+                      Math.min(
+                        Math.ceil(filteredEvents.length / itemsPerPage),
+                        currentPage + 1
+                      )
+                    )
+                  }
+                  disabled={currentPage === Math.ceil(filteredEvents.length / itemsPerPage)}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === Math.ceil(filteredEvents.length / itemsPerPage)
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                  }`}
+                >
+                  Next →
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-600 text-lg">
