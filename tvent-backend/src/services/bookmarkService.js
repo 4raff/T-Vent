@@ -16,6 +16,10 @@ class BookmarkService {
   async listBookmarksByUser(user_id) {
     return bookmarkRepository.listByUser(user_id);
   }
+
+  async listAllBookmarks() {
+    return bookmarkRepository.listAll();
+  }
 }
 
 module.exports = new BookmarkService();

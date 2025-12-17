@@ -3,7 +3,24 @@ const knex = require('../config/database');
 
 class PaymentRepository {
   async findById(id) {
-    return knex('payments').where({ id }).first();
+    // Join with users, tickets, and events to get full information
+    return knex('payments')
+      .leftJoin('tickets', 'payments.ticket_id', 'tickets.id')
+      .leftJoin('users', 'payments.user_id', 'users.id')
+      .leftJoin('events', 'tickets.event_id', 'events.id')
+      .where('payments.id', id)
+      .select(
+        'payments.*',
+        'users.username as user_name',
+        'users.email as user_email',
+        'users.no_handphone as user_phone',
+        'tickets.kode_tiket',
+        'tickets.jumlah as quantity',
+        'tickets.status as ticket_status',
+        'tickets.cancellation_reason',
+        'events.nama as event_name'
+      )
+      .first();
   }
 
   async create(payment) {
@@ -37,11 +54,49 @@ class PaymentRepository {
   }
 
   async list() {
-    return knex('payments').select('*');
+    // Join with users, tickets, and events for list view
+    return knex('payments')
+      .leftJoin('tickets', 'payments.ticket_id', 'tickets.id')
+      .leftJoin('users', 'payments.user_id', 'users.id')
+      .leftJoin('events', 'tickets.event_id', 'events.id')
+      .select(
+        'payments.id',
+        'payments.ticket_id',
+        'payments.jumlah',
+        'payments.status',
+        'payments.metode_pembayaran',
+        'payments.rejection_reason',
+        'payments.created_at',
+        'payments.bukti_pembayaran',
+        'users.username as user_name',
+        'users.email as user_email',
+        'users.no_handphone as user_phone',
+        'tickets.kode_tiket',
+        'tickets.jumlah as quantity',
+        'tickets.status as ticket_status',
+        'tickets.cancellation_reason',
+        'events.nama as event_name'
+      );
   }
 
   async findByTicketId(ticket_id) {
-    return knex('payments').where({ ticket_id }).first();
+    return knex('payments')
+      .leftJoin('tickets', 'payments.ticket_id', 'tickets.id')
+      .leftJoin('users', 'payments.user_id', 'users.id')
+      .leftJoin('events', 'tickets.event_id', 'events.id')
+      .where('payments.ticket_id', ticket_id)
+      .select(
+        'payments.*',
+        'users.username as user_name',
+        'users.email as user_email',
+        'users.no_handphone as user_phone',
+        'tickets.kode_tiket',
+        'tickets.jumlah as quantity',
+        'tickets.status as ticket_status',
+        'tickets.cancellation_reason',
+        'events.nama as event_name'
+      )
+      .first();
   }
 }
 

@@ -2,8 +2,16 @@
 const eventService = require('../services/eventService');
 const EventController = {
   async getAll(req, res) {
-    const events = await eventService.listEvents();
-    res.json(events);
+    try {
+      const events = await eventService.listEvents();
+      res.json(events);
+    } catch (error) {
+      console.error('Error in EventController.getAll():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat events',
+        error: error.message 
+      });
+    }
   },
   async getById(req, res) {
     const event = await eventService.getEventById(req.params.id);
@@ -105,6 +113,46 @@ const EventController = {
       res.json({ available });
     } catch (e) {
       res.status(400).json({ message: e.message });
+    }
+  },
+
+  async getCategories(req, res) {
+    try {
+      const categories = await eventService.getUniqueCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error('Error in EventController.getCategories():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat kategori',
+        error: error.message 
+      });
+    }
+  },
+
+  async getFeaturedEvent(req, res) {
+    try {
+      const event = await eventService.getFeaturedEvent();
+      res.json(event);
+    } catch (error) {
+      console.error('Error in EventController.getFeaturedEvent():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat featured event',
+        error: error.message 
+      });
+    }
+  },
+
+  async getMostPurchasedEvents(req, res) {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+      const events = await eventService.getMostPurchasedEvents(limit);
+      res.json(events);
+    } catch (error) {
+      console.error('Error in EventController.getMostPurchasedEvents():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat most purchased events',
+        error: error.message 
+      });
     }
   }
 };

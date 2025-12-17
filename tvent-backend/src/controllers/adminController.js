@@ -1,28 +1,22 @@
 const adminService = require('../services/adminService');
 
 const AdminController = {
-  async addEvent(req, res) {
+  async getStats(req, res) {
     try {
-      const { adminId, ...eventData } = req.body;
-      const event = await adminService.addEvent(adminId, eventData);
-      res.status(201).json(event);
+      const stats = await adminService.getStats();
+      res.json({ 
+        message: 'Stats berhasil diambil', 
+        data: stats 
+      });
     } catch (e) {
       res.status(400).json({ message: e.message });
     }
   },
-  async editEvent(req, res) {
+
+  async approveEvent(req, res) {
     try {
-      const { eventId, updates } = req.body;
-      const event = await adminService.editEvent(eventId, updates);
-      res.json(event);
-    } catch (e) {
-      res.status(400).json({ message: e.message });
-    }
-  },
-  async confirmEvent(req, res) {
-    try {
-      const { eventId } = req.body;
-      const event = await adminService.confirmEvent(eventId);
+      const eventId = req.params.id;
+      const event = await adminService.approveEvent(eventId);
       res.json({ 
         message: 'Event berhasil di-approve', 
         data: event 
@@ -31,9 +25,10 @@ const AdminController = {
       res.status(400).json({ message: e.message });
     }
   },
+  
   async rejectEvent(req, res) {
     try {
-      const { eventId } = req.body;
+      const eventId = req.params.id;
       const event = await adminService.rejectEvent(eventId);
       res.json({ 
         message: 'Event berhasil di-reject', 
@@ -43,12 +38,26 @@ const AdminController = {
       res.status(400).json({ message: e.message });
     }
   },
+  
   async cancelEvent(req, res) {
     try {
-      const { eventId } = req.body;
+      const eventId = req.params.id;
       const event = await adminService.cancelEvent(eventId);
       res.json({ 
         message: 'Event berhasil dibatalkan', 
+        data: event 
+      });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  },
+  
+  async completeEvent(req, res) {
+    try {
+      const eventId = req.params.id;
+      const event = await adminService.completeEvent(eventId);
+      res.json({ 
+        message: 'Event berhasil diselesaikan', 
         data: event 
       });
     } catch (e) {

@@ -34,6 +34,21 @@ class EventService {
     const event = await eventRepository.findById(id);
     return event ? event.tiket_tersedia : 0;
   }
+
+  // getUniqueCategories: get all unique categories from events
+  async getUniqueCategories() {
+    return eventRepository.getUniqueCategories();
+  }
+
+  // getFeaturedEvent: get most purchased event
+  async getFeaturedEvent() {
+    return eventRepository.getFeaturedEvent();
+  }
+
+  // getMostPurchasedEvents: get top N most purchased events
+  async getMostPurchasedEvents(limit = 10) {
+    return eventRepository.getMostPurchasedEvents(limit);
+  }
 }
 
 module.exports = new EventService();

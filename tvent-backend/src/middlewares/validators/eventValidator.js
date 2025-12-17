@@ -43,8 +43,20 @@ const validateCreateEvent = [
     .isFloat({ min: 0 }).withMessage('Harga tidak boleh negatif'),
   
   body('poster')
-    .optional()
-    .isURL().withMessage('Format URL poster tidak valid'),
+    .notEmpty().withMessage('Poster tidak boleh kosong')
+    .custom((value) => {
+      // Accept both URLs and Base64 strings
+      if (typeof value !== 'string') {
+        throw new Error('Format poster tidak valid');
+      }
+      // Check if it's a valid URL or Base64
+      const isUrl = /^https?:\/\//.test(value);
+      const isBase64 = /^data:image\/(png|jpg|jpeg|gif);base64,/.test(value);
+      if (!isUrl && !isBase64) {
+        throw new Error('Poster harus berupa URL atau Base64 image');
+      }
+      return true;
+    }),
 
 ];
 
@@ -95,7 +107,19 @@ const validateUpdateEvent = [
   
   body('poster')
     .optional()
-    .isURL().withMessage('Format URL poster tidak valid'),
+    .custom((value) => {
+      // Accept both URLs and Base64 strings
+      if (typeof value !== 'string') {
+        throw new Error('Format poster tidak valid');
+      }
+      // Check if it's a valid URL or Base64
+      const isUrl = /^https?:\/\//.test(value);
+      const isBase64 = /^data:image\/(png|jpg|jpeg|gif);base64,/.test(value);
+      if (!isUrl && !isBase64) {
+        throw new Error('Poster harus berupa URL atau Base64 image');
+      }
+      return true;
+    }),
   
   body('status')
     .optional()

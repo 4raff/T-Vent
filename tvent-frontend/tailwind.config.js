@@ -11,6 +11,11 @@ module.exports = {
         "watercolor-sky": "hsl(200 60% 92%)",
         "watercolor-violet": "hsl(270 45% 90%)",
         "watercolor-rose": "hsl(350 60% 92%)",
+        foreground: "#1f2937",
+        muted: "#f3f4f6",
+        primary: "#9333ea",
+        secondary: "#ec4899",
+        accent: "#e5e7eb",
       },
       boxShadow: {
         watercolor:

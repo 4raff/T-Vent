@@ -12,44 +12,28 @@ class AdminService {
     this.ticketRepository = ticketRepository;
   }
 
-  // Event Management
-  async addEvent(adminId, eventData) {
-    try {
-      const event = await this.eventRepository.create({
-        ...eventData,
-        penyelenggara: adminId,
-        status: 'pending',
-        is_published: false,
-        created_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal membuat event: ${error.message}`);
-    }
-  }
-
-  async editEvent(eventId, updates) {
-    try {
-      const event = await this.eventRepository.update(eventId, {
-        ...updates,
-        updated_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal edit event: ${error.message}`);
-    }
-  }
-
-  async confirmEvent(eventId) {
+  // Event Approval Management (Admin Only)
+  async approveEvent(eventId) {
     try {
       const event = await this.eventRepository.update(eventId, {
         status: 'approved',
-        is_published: true,
         updated_at: new Date(),
       });
       return event;
     } catch (error) {
-      throw new Error(`Gagal confirm event: ${error.message}`);
+      throw new Error(`Gagal approve event: ${error.message}`);
+    }
+  }
+
+  async rejectEvent(eventId) {
+    try {
+      const event = await this.eventRepository.update(eventId, {
+        status: 'rejected',
+        updated_at: new Date(),
+      });
+      return event;
+    } catch (error) {
+      throw new Error(`Gagal reject event: ${error.message}`);
     }
   }
 
@@ -57,12 +41,23 @@ class AdminService {
     try {
       const event = await this.eventRepository.update(eventId, {
         status: 'cancelled',
-        is_published: false,
         updated_at: new Date(),
       });
       return event;
     } catch (error) {
       throw new Error(`Gagal cancel event: ${error.message}`);
+    }
+  }
+
+  async completeEvent(eventId) {
+    try {
+      const event = await this.eventRepository.update(eventId, {
+        status: 'completed',
+        updated_at: new Date(),
+      });
+      return event;
+    } catch (error) {
+      throw new Error(`Gagal complete event: ${error.message}`);
     }
   }
 
@@ -184,33 +179,6 @@ class AdminService {
     }
   }
 
-  async approveEvent(eventId) {
-    try {
-      const event = await this.eventRepository.update(eventId, {
-        is_published: true,
-        status: 'approved',
-        updated_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal approve event: ${error.message}`);
-    }
-  }
-
-  async rejectEvent(eventId, alasan) {
-    try {
-      const event = await this.eventRepository.update(eventId, {
-        is_published: false,
-        status: 'rejected',
-        rejection_reason: alasan,
-        updated_at: new Date(),
-      });
-      return event;
-    } catch (error) {
-      throw new Error(`Gagal reject event: ${error.message}`);
-    }
-  }
-
   // Payment Reports
   async getPaymentReport(page = 1, limit = 20, status = 'completed') {
     try {
@@ -303,9 +271,63 @@ class AdminService {
     }
   }
 
-  // rejectEvent: admin rejects event
-  async rejectEvent(eventId) {
-    return eventRepository.update(eventId, { status: 'rejected' });
+  // Get Admin Dashboard Statistics
+  async getStats() {
+    try {
+      const events = await this.eventRepository.list();
+      const users = await this.userRepository.list();
+      const payments = await this.paymentRepository.list();
+
+      // Calculate total revenue from success payments
+      const successPayments = payments.filter(p => p.status === 'success');
+      const totalRevenue = successPayments.reduce((sum, p) => {
+        const amount = parseFloat(p.jumlah) || 0;
+        return sum + amount;
+      }, 0);
+
+      // Count pending payments
+      const pendingPayments = payments.filter(p => p.status === 'pending').length;
+
+      // Count pending events
+      const pendingEvents = events.filter(e => e.status === 'pending').length;
+
+      // Count approved events
+      const approvedEvents = events.filter(e => e.status === 'approved').length;
+
+      // Count rejected events
+      const rejectedEvents = events.filter(e => e.status === 'rejected').length;
+
+      // Count payment statuses
+      const successCountPayments = payments.filter(p => p.status === 'success').length;
+      const failedPayments = payments.filter(p => p.status === 'failed').length;
+
+      // Count user types
+      const adminUsers = users.filter(u => u.role === 'admin').length;
+      const regularUsers = users.filter(u => u.role !== 'admin').length;
+
+      return {
+        totalEvents: events.length,
+        totalUsers: users.length,
+        totalRevenue: Math.round(totalRevenue),
+        pendingPayments: pendingPayments,
+        events: {
+          pending: pendingEvents,
+          approved: approvedEvents,
+          rejected: rejectedEvents,
+        },
+        payments: {
+          success: successCountPayments,
+          pending: pendingPayments,
+          failed: failedPayments,
+        },
+        users: {
+          admin: adminUsers,
+          regular: regularUsers,
+        },
+      };
+    } catch (error) {
+      throw new Error(`Gagal mendapatkan stats: ${error.message}`);
+    }
   }
 }
 

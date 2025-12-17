@@ -15,9 +15,9 @@ const validateCreateReview = [
     .isInt({ min: 1, max: 5 }).withMessage('Rating harus antara 1-5'),
   
   body('feedback')
-    .optional()
+    .notEmpty().withMessage('Feedback tidak boleh kosong')
     .trim()
-    .isLength({ min: 10, max: 1000 }).withMessage('Feedback harus antara 10-1000 karakter')
+    .isLength({ min: 3, max: 1000 }).withMessage('Feedback harus antara 3-1000 karakter')
 ];
 
 // Validasi untuk update review
@@ -45,12 +45,19 @@ const validateReviewId = [
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const errorDetails = errors.array().map(err => ({
+      field: err.path || err.param,
+      value: err.value,
+      message: err.msg
+    }));
+    console.log('Validation errors:', errorDetails);
+    
+    // Get first error message for toast
+    const firstErrorMessage = errorDetails[0]?.message || 'Validasi gagal';
+    
     return res.status(400).json({
-      message: 'Validasi gagal',
-      errors: errors.array().map(err => ({
-        field: err.path,
-        message: err.msg
-      }))
+      message: firstErrorMessage,
+      errors: errorDetails
     });
   }
   next();
