@@ -3,7 +3,14 @@ const knex = require('../config/database');
 
 class EventRepository {
   async findById(id) {
-    return knex('events').where({ id }).first();
+    return knex('events')
+      .leftJoin('users', 'events.created_by', 'users.id')
+      .select(
+        'events.*',
+        'users.username as creator_name'
+      )
+      .where('events.id', id)
+      .first();
   }
 
   async create(event) {
@@ -25,14 +32,24 @@ class EventRepository {
     return knex('events').where({ id }).del();
   }
 
-  async list() {
+  async list(userRole = null) {
     try {
-      return await knex('events')
+      let query = knex('events')
         .leftJoin('users', 'events.created_by', 'users.id')
         .select(
           'events.*',
           'users.username as creator_name'
         );
+      
+      // Filter untuk regular users: hanya approved events yang belum expired
+      if (userRole !== 'admin') {
+        const now = knex.raw('NOW()');
+        query = query
+          .where('events.status', 'approved')
+          .where('events.tanggal', '>=', now);
+      }
+      
+      return await query;
     } catch (error) {
       console.error('Error in EventRepository.list():', error.message);
       throw error;
@@ -67,11 +84,13 @@ class EventRepository {
   // Get featured event (most purchased/sold)
   async getFeaturedEvent() {
     try {
+      const now = knex.raw('NOW()');
       const result = await knex('events')
         .leftJoin('tickets', 'events.id', 'tickets.event_id')
         .select('events.*')
         .count('tickets.id as ticket_sales')
         .where('events.status', 'approved')
+        .where('events.tanggal', '>=', now)
         .groupBy('events.id')
         .orderBy('ticket_sales', 'desc')
         .first();
@@ -86,6 +105,7 @@ class EventRepository {
   // Get most purchased events (limit N)
   async getMostPurchasedEvents(limit = 10) {
     try {
+      const now = knex.raw('NOW()');
       const result = await knex('events')
         .leftJoin('tickets', 'events.id', 'tickets.event_id')
         .leftJoin('users', 'events.created_by', 'users.id')
@@ -95,6 +115,7 @@ class EventRepository {
           knex.raw('COUNT(tickets.id) as ticket_sales')
         )
         .where('events.status', 'approved')
+        .where('events.tanggal', '>=', now)
         .groupBy('events.id')
         .orderBy('ticket_sales', 'desc')
         .limit(limit);
@@ -102,6 +123,23 @@ class EventRepository {
       return result || [];
     } catch (error) {
       console.error('Error in EventRepository.getMostPurchasedEvents():', error.message);
+      throw error;
+    }
+  }
+
+  // Get all events created by a specific user (regardless of status)
+  async findByCreator(userId) {
+    try {
+      return await knex('events')
+        .leftJoin('users', 'events.created_by', 'users.id')
+        .select(
+          'events.*',
+          'users.username as creator_name'
+        )
+        .where('events.created_by', userId)
+        .orderBy('events.created_at', 'desc');
+    } catch (error) {
+      console.error('Error in EventRepository.findByCreator():', error.message);
       throw error;
     }
   }

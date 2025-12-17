@@ -17,6 +17,10 @@ const NotificationController = {
   async markAsRead(req, res) {
     await notificationService.markNotificationAsRead(req.params.id);
     res.status(204).end();
+  },
+  async delete(req, res) {
+    await notificationService.deleteNotification(req.params.id);
+    res.status(204).end();
   }
 };
 

@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import { authService } from "@/utils/services/authService";
 import { apiClient } from "@/utils/api/client";
+import LoginModal from "@/components/modals/login-modal";
 
 export default function Navbar({
   onLoginClick,
@@ -21,6 +23,9 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isSignupMode, setIsSignupMode] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Update state whenever props change (from parent Home page)
   useEffect(() => {
@@ -35,6 +40,8 @@ export default function Navbar({
 
   // Also check auth from localStorage/authService on mount and route change
   useEffect(() => {
+    setIsMounted(true);
+    
     const checkAuth = () => {
       if (authService.isAuthenticated()) {
         const userData = authService.getUser();
@@ -103,6 +110,16 @@ export default function Navbar({
       propsOnLogout();
     }
     router.push("/");
+  };
+
+  const handleAuthSuccess = () => {
+    // Refresh auth state
+    if (authService.isAuthenticated()) {
+      const userData = authService.getUser();
+      setIsLoggedIn(true);
+      setUser(userData);
+    }
+    setShowAuthModal(false);
   };
 
   const navLinks = [
@@ -278,13 +295,19 @@ export default function Navbar({
             ) : (
               <div className="flex items-center gap-3">
                 <button
-                  onClick={onLoginClick}
+                  onClick={() => {
+                    setIsSignupMode(false);
+                    setShowAuthModal(true);
+                  }}
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition font-semibold"
                 >
                   Login
                 </button>
                 <button
-                  onClick={onSignupClick}
+                  onClick={() => {
+                    setIsSignupMode(true);
+                    setShowAuthModal(true);
+                  }}
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
                 >
                   Sign Up
@@ -418,7 +441,8 @@ export default function Navbar({
               <>
                 <button
                   onClick={() => {
-                    onLoginClick();
+                    setIsSignupMode(false);
+                    setShowAuthModal(true);
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
@@ -427,7 +451,8 @@ export default function Navbar({
                 </button>
                 <button
                   onClick={() => {
-                    onSignupClick();
+                    setIsSignupMode(true);
+                    setShowAuthModal(true);
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
@@ -439,6 +464,18 @@ export default function Navbar({
           </div>
         )}
       </div>
+
+      {/* Auth Modal - Now in Navbar for Global Access */}
+      {isMounted && showAuthModal && createPortal(
+        <LoginModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          isSignupMode={isSignupMode}
+          setIsSignupMode={setIsSignupMode}
+          onAuthSuccess={handleAuthSuccess}
+        />,
+        document.body
+      )}
     </nav>
   );
 }

@@ -3,10 +3,14 @@
 import { useState } from "react";
 import { formatRupiah } from "@/utils/formatCurrency";
 
-export default function EventDetailModal({ isOpen, event, onClose }) {
+export default function EventDetailModal({ isOpen, event, tickets = [], onClose }) {
   const [fullscreenImage, setFullscreenImage] = useState(null);
 
   if (!isOpen || !event) return null;
+
+  // Calculate tickets sold and revenue based on event data (same as my-events)
+  const ticketsSold = event.jumlah_tiket - (event.tiket_tersedia || 0);
+  const totalRevenue = ticketsSold * event.harga;
 
   const capitalizeStatus = (status) => {
     return status
@@ -124,6 +128,14 @@ export default function EventDetailModal({ isOpen, event, onClose }) {
               <div>
                 <p className="text-xs sm:text-sm text-gray-600">Tiket Tersedia</p>
                 <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">{event.tiket_tersedia}</p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600">Tiket Terjual</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-1">{ticketsSold}</p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600">Total Pendapatan</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-700 mt-1">{formatRupiah(totalRevenue)}</p>
               </div>
             </div>
           </div>

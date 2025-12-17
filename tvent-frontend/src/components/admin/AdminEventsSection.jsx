@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EventDetailModal from "@/components/modals/event-detail-modal";
 import SearchFilter from "@/components/admin/SearchFilter";
 import { formatRupiah } from "@/utils/formatCurrency";
+import { formatDateTime } from "@/utils/formatDate";
+import { eventService } from "@/utils/services/eventService";
 
 const itemsPerPage = 10;
+
+// Helper function to check if event is expired
+const isEventExpired = (eventDate) => {
+  return new Date(eventDate) < new Date();
+};
 
 export default function AdminEventsSection({ 
   allEvents, 
@@ -14,7 +21,22 @@ export default function AdminEventsSection({
   capitalizeStatus 
 }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEventTickets, setSelectedEventTickets] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Fetch tickets when event is selected
+  useEffect(() => {
+    if (selectedEvent) {
+      eventService.getTicketsByEvent(selectedEvent.id)
+        .then(response => {
+          setSelectedEventTickets(response.data || []);
+        })
+        .catch(error => {
+          console.error('Error fetching tickets:', error);
+          setSelectedEventTickets([]);
+        });
+    }
+  }, [selectedEvent]);
 
   return (
     <>
@@ -31,14 +53,19 @@ export default function AdminEventsSection({
         title="Events"
         emptyMessage="No events found"
         renderItem={(filteredEvents) => {
-          const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+          // Sort events by created_at (newest first)
+          const sortedEvents = [...filteredEvents].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+          );
+          
+          const totalPages = Math.ceil(sortedEvents.length / itemsPerPage);
           const startIndex = (currentPage - 1) * itemsPerPage;
-          const paginatedEvents = filteredEvents.slice(startIndex, startIndex + itemsPerPage);
+          const paginatedEvents = sortedEvents.slice(startIndex, startIndex + itemsPerPage);
 
           return (
             <>
               <div className="mb-4 text-sm text-gray-600">
-                Showing {Math.min(startIndex + 1, filteredEvents.length)} to {Math.min(startIndex + itemsPerPage, filteredEvents.length)} of {filteredEvents.length} events
+                Showing {Math.min(startIndex + 1, sortedEvents.length)} to {Math.min(startIndex + itemsPerPage, sortedEvents.length)} of {sortedEvents.length} events
               </div>
               
               <div className="space-y-4 mb-6">
@@ -49,7 +76,7 @@ export default function AdminEventsSection({
                   >
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-bold text-gray-900">
                             {event.nama}
                           </h3>
@@ -61,13 +88,18 @@ export default function AdminEventsSection({
                           }`}>
                             {capitalizeStatus(event.status)}
                           </span>
+                          {isEventExpired(event.tanggal) && (
+                            <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-300 text-gray-800">
+                              🔒 Expired
+                            </span>
+                          )}
                         </div>
                         <p className="text-gray-600 text-sm mb-2">
                           {event.deskripsi}
                         </p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
                           <div>Creator: {event.creator_name}</div>
-                          <div>Tanggal: {event.tanggal}</div>
+                          <div>Tanggal: {formatDateTime(event.tanggal)}</div>
                           <div>Lokasi: {event.lokasi}</div>
                           <div>Harga: {formatRupiah(event.harga)}</div>
                         </div>
@@ -162,6 +194,7 @@ export default function AdminEventsSection({
       <EventDetailModal
         isOpen={!!selectedEvent}
         event={selectedEvent}
+        tickets={selectedEventTickets}
         onClose={() => setSelectedEvent(null)}
       />
     </>

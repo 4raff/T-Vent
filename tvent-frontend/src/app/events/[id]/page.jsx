@@ -8,6 +8,7 @@ import { eventService } from "@/utils/services/eventService";
 import { reviewService } from "@/utils/services/reviewService";
 import { bookmarkService } from "@/utils/services/bookmarkService";
 import { capitalizeFirstLetter, getStatusColor } from "@/utils/helpers";
+import { formatDateTime } from "@/utils/formatDate";
 import { useCheckout } from "@/contexts/CheckoutContext";
 import { useToast } from "@/components/common/ToastProvider";
 import Navbar from "@/components/layout/navbar";
@@ -35,6 +36,7 @@ export default function EventDetail() {
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [creatorInfo, setCreatorInfo] = useState(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -48,6 +50,12 @@ export default function EventDetail() {
         if (eventId) {
           const eventData = await eventService.getEvent(eventId);
           setEvent(eventData);
+          
+          // Creator info sudah termasuk dalam event data (creator_name)
+          // Gunakan langsung dari event object
+          setCreatorInfo({
+            username: eventData.creator_name || "Creator"
+          });
           
           // Check if user has bookmarked this event
           if (userData) {
@@ -168,12 +176,19 @@ export default function EventDetail() {
     }
   };
 
-  const handleLoginSuccess = (token, userData) => {
-    localStorage.setItem('jwtToken', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-    setShowLoginModal(false);
-    toast.showSuccess(`Selamat datang, ${userData.username}!`);
+  const handleContactCreator = () => {
+    if (!user) {
+      toast.showWarning("Silakan login terlebih dahulu untuk menghubungi creator");
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Redirect ke messages page dengan creator ID (created_by field dari backend)
+    if (event.created_by) {
+      router.push(`/notifications?tab=messages&contact=${event.created_by}`);
+    } else {
+      toast.showError("Informasi creator event tidak ditemukan");
+    }
   };
 
   if (loading) {
@@ -261,14 +276,7 @@ export default function EventDetail() {
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Date & Time</p>
                   <p className="text-lg font-semibold text-gray-900 mt-2">
-                    {new Date(event.tanggal).toLocaleDateString("id-ID", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatDateTime(event.tanggal)}
                   </p>
                 </div>
                 <div>
@@ -290,6 +298,31 @@ export default function EventDetail() {
                   <p className="text-lg font-semibold text-gray-900 mt-2">
                     {event.tiket_tersedia}/{event.jumlah_tiket}
                   </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-600 text-sm font-medium mb-3">Event Creator</p>
+                  <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center text-lg font-bold text-purple-700">
+                        {creatorInfo?.username?.charAt(0).toUpperCase() || "C"}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {creatorInfo?.username || "Creator"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Event Organizer
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleContactCreator}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-sm whitespace-nowrap"
+                      title="Send message to event creator"
+                    >
+                      💬 Message
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -435,7 +468,7 @@ export default function EventDetail() {
                 </div>
               )}
 
-              {/* Booking Form */}
+              {/* Booking Button */}
               {!showBooking ? (
                 <button
                   onClick={() => setShowBooking(true)}

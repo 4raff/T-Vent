@@ -2,6 +2,8 @@ const userRepository = require('../repositories/userRepository');
 const eventRepository = require('../repositories/eventRepository');
 const paymentRepository = require('../repositories/paymentRepository');
 const ticketRepository = require('../repositories/ticketRepository');
+const notificationRepository = require('../repositories/notificationRepository');
+const reminderService = require('./reminderService');
 const db = require('../config/database');
 
 class AdminService {
@@ -19,6 +21,10 @@ class AdminService {
         status: 'approved',
         updated_at: new Date(),
       });
+
+      // ✅ Kirim notifikasi ke organizer bahwa event di-approve
+      await reminderService.sendEventApprovedNotification(eventId);
+
       return event;
     } catch (error) {
       throw new Error(`Gagal approve event: ${error.message}`);
@@ -55,6 +61,10 @@ class AdminService {
         status: 'completed',
         updated_at: new Date(),
       });
+
+      // ✅ Kirim notifikasi ke pembeli tiket dan organizer bahwa event selesai
+      await reminderService.sendEventCompletedNotification(eventId);
+
       return event;
     } catch (error) {
       throw new Error(`Gagal complete event: ${error.message}`);

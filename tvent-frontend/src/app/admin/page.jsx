@@ -59,7 +59,7 @@ export default function AdminPanel() {
         // Fetch all required data
         const [statsRes, eventsRes, paymentsRes, usersRes, banksRes, ewalletsRes] = await Promise.all([
           apiClient.get(`/admin/stats`),
-          apiClient.get(`/events`),
+          apiClient.get(`/events/admin/all`),
           apiClient.get(`/payments`),
           apiClient.get(`/users`),
           apiClient.get(`/bank-accounts?includeInactive=true`),

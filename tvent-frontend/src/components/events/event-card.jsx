@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatDateTime } from "@/utils/formatDate";
 
 export default function EventCard({ event }) {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function EventCard({ event }) {
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <span>📅</span>
-            <span>{event.tanggal ? new Date(event.tanggal).toLocaleDateString('id-ID') : 'TBD'}</span>
+            <span>{formatDateTime(event.tanggal)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <span>📍</span>

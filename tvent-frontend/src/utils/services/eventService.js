@@ -90,4 +90,43 @@ export const eventService = {
       throw error;
     }
   },
+
+  /**
+   * Get all unique event categories
+   */
+  async getCategories() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/categories`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getCategories error:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all events created by logged-in user
+   */
+  async getMyEvents() {
+    try {
+      const response = await apiClient.get(`${API_ENDPOINTS.EVENTS.LIST}/my-events`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getMyEvents error:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all tickets for a specific event
+   */
+  async getTicketsByEvent(eventId) {
+    try {
+      const response = await apiClient.get(`/tickets?event_id=${eventId}`);
+      return response;
+    } catch (error) {
+      console.error('eventService.getTicketsByEvent error:', error.message);
+      throw error;
+    }
+  },
 };

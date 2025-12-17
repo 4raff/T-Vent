@@ -3,12 +3,45 @@ const eventService = require('../services/eventService');
 const EventController = {
   async getAll(req, res) {
     try {
-      const events = await eventService.listEvents();
+      // Extract user role from JWT (null jika tidak login)
+      const userRole = req.userData?.role || null;
+      const events = await eventService.listEvents(userRole);
       res.json(events);
     } catch (error) {
       console.error('Error in EventController.getAll():', error);
       res.status(500).json({ 
         message: 'Gagal memuat events',
+        error: error.message 
+      });
+    }
+  },
+  async getAllForAdmin(req, res) {
+    try {
+      // Endpoint khusus admin: tampilkan SEMUA event termasuk yang expired
+      const events = await eventService.listEvents('admin');
+      res.json(events);
+    } catch (error) {
+      console.error('Error in EventController.getAllForAdmin():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat events',
+        error: error.message 
+      });
+    }
+  },
+  async getMyEvents(req, res) {
+    try {
+      // Endpoint khusus user: fetch semua events yang dibuat user (regardless of status)
+      if (!req.userData || !req.userData.id) {
+        return res.status(401).json({ message: 'Otorisasi gagal: User ID tidak ditemukan.' });
+      }
+      
+      const userId = req.userData.id;
+      const events = await eventService.getEventsByCreator(userId);
+      res.json(events);
+    } catch (error) {
+      console.error('Error in EventController.getMyEvents():', error);
+      res.status(500).json({ 
+        message: 'Gagal memuat events Anda',
         error: error.message 
       });
     }

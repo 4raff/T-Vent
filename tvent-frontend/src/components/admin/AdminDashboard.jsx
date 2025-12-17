@@ -7,17 +7,35 @@ export default function AdminDashboard({
   payments, 
   capitalizeStatus 
 }) {
+  // Sort pending events by created_at (newest first)
+  const sortedPendingEvents = [...pendingEvents].sort((a, b) => 
+    new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  // Sort payments by created_at (newest first)
+  const sortedPayments = [...payments].sort((a, b) => 
+    new Date(b.created_at) - new Date(a.created_at)
+  );
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* Recent Events */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Pending Events</h2>
-        {pendingEvents.length > 0 ? (
+        {sortedPendingEvents.length > 0 ? (
           <div className="space-y-3">
-            {pendingEvents.slice(0, 5).map((event) => (
+            {sortedPendingEvents.slice(0, 5).map((event) => (
               <div key={event.id} className="border rounded p-3 hover:bg-gray-50 text-sm sm:text-base">
                 <p className="font-semibold text-gray-900 truncate">{event.nama}</p>
                 <p className="text-sm text-gray-600 truncate">by {event.creator_name}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(event.created_at).toLocaleDateString("id-ID", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </p>
               </div>
             ))}
           </div>
@@ -29,9 +47,9 @@ export default function AdminDashboard({
       {/* Recent Payments */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Recent Payments</h2>
-        {payments.length > 0 ? (
+        {sortedPayments.length > 0 ? (
           <div className="space-y-3">
-            {payments.slice(0, 5).map((payment) => (
+            {sortedPayments.slice(0, 5).map((payment) => (
               <div key={payment.id} className="border rounded p-3 hover:bg-gray-50 text-sm sm:text-base">
                 <div className="flex justify-between items-start gap-2">
                   <p className="font-semibold text-gray-900">{formatRupiah(payment.jumlah)}</p>
@@ -45,6 +63,14 @@ export default function AdminDashboard({
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 truncate">{payment.user_name}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(payment.created_at).toLocaleDateString("id-ID", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </p>
               </div>
             ))}
           </div>

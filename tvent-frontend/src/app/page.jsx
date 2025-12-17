@@ -18,8 +18,6 @@ import CreateEventModal from "@/components/modals/create-event-modal";
 
 export default function Home() {
     const toast = useToast();
-    const [showLogin, setShowLogin] = useState(false);
-    const [isSignupMode, setIsSignupMode] = useState(false);
     const [showCreateEvent, setShowCreateEvent] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [user, setUser] = useState(null);
@@ -65,21 +63,6 @@ export default function Home() {
         }
     };
 
-    const handleAuthSuccess = (token, userData) => {
-        localStorage.setItem('jwtToken', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-
-        setUser(userData);
-        setIsLoggedIn(true);
-        setShowLogin(false);
-        toast.showSuccess(`Selamat datang, ${userData.username}!`);
-        
-        // Re-fetch events setelah login (now dengan bearer token)
-        setTimeout(() => {
-            fetchEvents();
-        }, 500);
-    };
-
     const handleLogout = () => {
         authService.logout(); 
         setUser(null);
@@ -115,24 +98,11 @@ export default function Home() {
         return () => {
             window.removeEventListener('userProfileUpdated', handleProfileUpdate);
         };
-    }, []); 
-
-    const handleLoginClick = () => {
-        setIsSignupMode(false);
-        setShowLogin(true);
-    };
-
-    const handleSignupClick = () => {
-        setIsSignupMode(true);
-        setShowLogin(true);
-    };
+    }, []);
 
     return (
         <main className="min-h-screen bg-background">
             <Navbar
-                onLoginClick={handleLoginClick}
-                onSignupClick={handleSignupClick}
-                onCreateEventClick={() => setShowCreateEvent(true)}
                 isLoggedIn={isLoggedIn}
                 user={user}
                 onLogout={handleLogout}
@@ -148,14 +118,6 @@ export default function Home() {
             {!loading && !error && events && events.length === 0 && <p className="text-center text-xl p-8">{INFO_MESSAGES.NO_EVENTS}</p>}
             
             <Footer />
-
-            {showLogin && (
-                <LoginModal
-                    onClose={() => setShowLogin(false)}
-                    onLogin={handleAuthSuccess} 
-                    isSignupMode={isSignupMode}
-                />
-            )}
 
             {showCreateEvent && (
                 <CreateEventModal

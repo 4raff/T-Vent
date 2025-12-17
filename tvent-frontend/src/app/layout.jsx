@@ -7,7 +7,7 @@ const geist = Geist({ subsets: ["latin"] });
 const geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Telkom Event - Watercolor Festival",
+  title: "Telkom Event",
   description:
     "Experience the vibrant world of art and culture at Telkom University",
   generator: "v0.app",

@@ -98,10 +98,10 @@ export default function EventsPage() {
       );
     }
 
-    // Sort by date (newest first)
+    // Sort by creation date (newest created first)
     filtered.sort((a, b) => {
-      const dateA = new Date(a.tanggal);
-      const dateB = new Date(b.tanggal);
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
       return dateB - dateA;
     });
 
